@@ -1,885 +1,883 @@
-# FCA Compliance and Legal Requirements Analysis
+# FCA Compliance and Regulatory Requirements Analysis
 
 **Agent:** legal_compliance_analyst
 **Job:** Client Responsive Webform
 
 ---
 
-# FCA Compliance and Legal Requirements Analysis
-## Client Onboarding Webform for UK Wealth Management
+# FCA Compliance and Regulatory Requirements Analysis
+## Client Onboarding Web Form for UK Wealth Management
 
 **Document Version:** 1.0  
 **Date:** 2024  
-**Classification:** Compliance Requirements Specification
+**Classification:** Compliance Requirements Document  
+**Applicable Regulations:** FCA Handbook, UK GDPR, Data Protection Act 2018, Money Laundering Regulations 2017
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-This document provides a comprehensive legal and regulatory compliance framework for a client onboarding webform for UK wealth management firms. The analysis covers FCA regulations, UK GDPR requirements, anti-money laundering obligations, and industry best practices to ensure full regulatory compliance.
+This document provides comprehensive compliance requirements for developing a client onboarding web form for UK wealth management firms. The analysis covers FCA regulatory obligations, UK GDPR requirements, anti-money laundering (AML) provisions, and data protection standards necessary for legal and compliant client data collection.
 
 ---
 
 ## 1. REGULATORY FRAMEWORK OVERVIEW
 
 ### 1.1 Applicable Regulations
+- **FCA Handbook** - COBS (Conduct of Business Sourcebook)
+- **UK GDPR** (General Data Protection Regulation)
+- **Data Protection Act 2018**
+- **Money Laundering, Terrorist Financing and Transfer of Funds Regulations 2017**
+- **Senior Managers & Certification Regime (SM&CR)**
+- **Consumer Duty** (effective July 2023)
 
-1. **FCA Handbook Requirements:**
-   - COBS (Conduct of Business Sourcebook) - Client categorization and suitability
-   - SYSC (Senior Management Arrangements, Systems and Controls)
-   - PRIN (Principles for Businesses)
-   - CASS (Client Assets Sourcebook)
-
-2. **Data Protection:**
-   - UK GDPR (General Data Protection Regulation)
-   - Data Protection Act 2018
-   - Privacy and Electronic Communications Regulations (PECR) 2003
-
-3. **Financial Crime Prevention:**
-   - Money Laundering, Terrorist Financing and Transfer of Funds Regulations 2017 (MLR 2017)
-   - Proceeds of Crime Act 2002
-   - FCA Financial Crime Guide
-
-4. **Consumer Protection:**
-   - Consumer Rights Act 2015
-   - Financial Services and Markets Act 2000
+### 1.2 Key Regulatory Principles
+- Fair treatment of customers (TCF - Treating Customers Fairly)
+- Know Your Customer (KYC)
+- Suitability assessment
+- Client classification and categorization
+- Data minimization and purpose limitation
+- Transparency and informed consent
 
 ---
 
-## 2. FCA CLIENT ONBOARDING REQUIREMENTS
+## 2. MANDATORY DATA FIELDS
 
-### 2.1 Know Your Client (KYC) Obligations
+### 2.1 Personal Identification Information
 
-#### 2.1.1 Client Categorization (COBS 3)
-**Purpose:** Determine appropriate level of regulatory protection
+#### **Required Fields:**
+| Field Name | Validation Rules | FCA/Legal Basis | Retention Period |
+|------------|------------------|-----------------|------------------|
+| Full Legal Name | Min 2 chars, alphabetic + spaces/hyphens | COBS 9.2, MLR 2017 | 6 years post-relationship |
+| Previous Names | Optional but recommended | MLR 2017 (AML) | 6 years post-relationship |
+| Date of Birth | Format: DD/MM/YYYY, Age ≥18 | COBS 9.2, MLR 2017 | 6 years post-relationship |
+| Nationality | Dropdown/multi-select | MLR 2017, CRS/FATCA | 6 years post-relationship |
+| National Insurance Number | Format: XX123456X | AML verification | 6 years post-relationship |
+| Passport/ID Number | Alphanumeric, conditional required | MLR 2017 | 6 years post-relationship |
+| Country of Tax Residence | Multi-select allowed | FATCA/CRS compliance | 6 years post-relationship |
 
-**Mandatory Requirements:**
-- Categorize client as Retail, Professional, or Eligible Counterparty
-- Provide written notification of categorization
-- Inform clients of their right to request different categorization
+#### **Contact Information:**
+| Field Name | Validation Rules | FCA/Legal Basis | Retention Period |
+|------------|------------------|-----------------|------------------|
+| Current Residential Address | Full address with postcode | COBS 9.2, MLR 2017 | 6 years post-relationship |
+| Time at Address | Months/Years | MLR 2017 (AML) | 6 years post-relationship |
+| Previous Address (if <3 years) | Conditional required | MLR 2017 | 6 years post-relationship |
+| Email Address | RFC 5322 compliant | COBS 2.1 (communications) | 6 years post-relationship |
+| Mobile Phone | UK format +44 validation | COBS 2.1 | 6 years post-relationship |
+| Alternative Contact Number | Optional | COBS 2.1 | 6 years post-relationship |
+| Preferred Contact Method | Radio buttons required | Consumer Duty | Duration of relationship |
 
-**Form Implementation:**
-- Auto-categorization logic based on responses
-- Display categorization notice before form submission
-- Store categorization decision with justification
+### 2.2 Employment and Financial Status
 
-#### 2.1.2 Client Identification Data (AML Compliance)
+#### **Required Fields:**
+| Field Name | Validation Rules | FCA/Legal Basis | Retention Period |
+|------------|------------------|-----------------|------------------|
+| Employment Status | Dropdown: Employed/Self-employed/Retired/Unemployed/Student | COBS 9.2 (suitability) | 6 years post-relationship |
+| Occupation/Job Title | Text field, required if employed | MLR 2017, COBS 9.2 | 6 years post-relationship |
+| Employer Name | Text field, conditional | MLR 2017 | 6 years post-relationship |
+| Industry Sector | Dropdown | PEP screening, MLR 2017 | 6 years post-relationship |
+| Annual Income Range | Dropdown with ranges | COBS 9.2 (suitability) | 6 years post-relationship |
+| Source of Wealth | Checkboxes/Text | MLR 2017 (AML) | 6 years post-relationship |
+| Net Worth Range | Dropdown with ranges | COBS 9.2 (client classification) | 6 years post-relationship |
 
-**Mandatory Personal Information Fields:**
+### 2.3 Client Classification Fields
 
-| Field Name | Data Type | Validation Rules | Retention Period |
-|------------|-----------|------------------|------------------|
-| Full Legal Name | Text | Match ID document | 5 years post-relationship |
-| Previous Names | Text | Optional but recommended | 5 years post-relationship |
-| Date of Birth | Date | Age ≥ 18 years | 5 years post-relationship |
-| Nationality | Dropdown | ISO country codes | 5 years post-relationship |
-| National Insurance Number | Alphanumeric | Format: AA 99 99 99 A | 5 years post-relationship |
-| Place of Birth | Text | Mandatory for AML | 5 years post-relationship |
+**Regulatory Requirement:** COBS 3.5 - Classification of clients
 
-**Mandatory Address Information:**
+| Field Name | Validation Rules | Purpose | Retention Period |
+|------------|------------------|---------|------------------|
+| Investment Experience | Years of experience | Professional client assessment | 6 years post-relationship |
+| Qualification Status | Financial qualifications held | Professional client criteria | 6 years post-relationship |
+| Portfolio Size | Value ranges | Client categorization | 6 years post-relationship |
+| Transaction Frequency | Historical frequency | Appropriateness assessment | 6 years post-relationship |
+| Professional Status Declaration | Yes/No with criteria | COBS 3.5.3R | 6 years post-relationship |
 
-| Field Name | Data Type | Validation Rules | Retention Period |
-|------------|-----------|------------------|------------------|
-| Current Residential Address | Multi-line | UK postcode validation | 5 years post-relationship |
-| Time at Current Address | Number | Months/Years | 5 years post-relationship |
-| Previous Address (if <3 years) | Multi-line | Required if current <3 years | 5 years post-relationship |
-| Correspondence Address | Multi-line | Optional, if different | 5 years post-relationship |
+**Default Classification:** Retail Client (highest protection level)
 
-**Mandatory Contact Information:**
+### 2.4 Politically Exposed Person (PEP) Screening
 
-| Field Name | Data Type | Validation Rules | Retention Period |
-|------------|-----------|------------------|------------------|
-| Primary Phone Number | Tel | UK format validation | 5 years post-relationship |
-| Mobile Number | Tel | SMS verification recommended | 5 years post-relationship |
-| Email Address | Email | RFC 5322 validation + verification | 5 years post-relationship |
-| Preferred Contact Method | Radio/Dropdown | Store preference | Duration of relationship |
+**Mandatory Fields:**
+- PEP Status Declaration (Yes/No)
+- If Yes: Position/Role held
+- If Yes: Country of position
+- Family Member PEP Status
+- Close Associate PEP Status
 
-### 2.2 Fact-Find Requirements (COBS 9 - Suitability)
+**Legal Basis:** MLR 2017, Regulation 35  
+**Retention:** 6 years post-relationship
 
-#### 2.2.1 Financial Situation Assessment
+### 2.5 Fact-Find Information
 
-**Mandatory Financial Information:**
+#### **Financial Objectives (COBS 9.2 - Suitability):**
+| Category | Required Fields | Validation |
+|----------|----------------|------------|
+| Investment Objectives | Multi-select: Capital Growth/Income/Capital Preservation/Inheritance Planning | Minimum 1 required |
+| Investment Timeframe | Dropdown: <1 year/1-3 years/3-5 years/5-10 years/10+ years | Required |
+| Risk Capacity | Calculated from financial position | Auto-calculated |
+| Risk Tolerance | Questionnaire score (1-10 scale) | Required, minimum 5 questions |
+| Attitude to Loss | Numeric/Percentage tolerance | Required |
+| Investment Knowledge | Scale assessment | COBS 10A (appropriateness) |
 
-| Category | Fields Required | Compliance Basis | Validation |
-|----------|----------------|------------------|------------|
-| **Income Details** | Employment status, Annual income (gross), Other income sources | COBS 9.2.1R | Income ranges acceptable |
-| **Assets** | Property value, Savings/investments value, Pension values | COBS 9.2.1R | Estimated values acceptable |
-| **Liabilities** | Mortgage outstanding, Other debts, Monthly commitments | COBS 9.2.1R | Ranges acceptable |
-| **Regular Expenditure** | Monthly living expenses, Discretionary spending | COBS 9.2.2R | For disposable income calc |
+#### **Assets and Liabilities:**
+| Field Name | Required | Validation |
+|------------|----------|------------|
+| Cash Savings | Yes | Numeric, ≥0 |
+| Investments (existing) | Yes | Numeric, ≥0 |
+| Property Value | Yes | Numeric, ≥0 |
+| Pension Values | Yes | Numeric, ≥0 |
+| Other Assets | Optional | Numeric, ≥0 |
+| Mortgage Balance | Yes | Numeric, ≥0 |
+| Other Debts | Yes | Numeric, ≥0 |
+| Monthly Expenditure | Yes | Numeric, >0 |
 
-**Implementation Notes:**
-- Allow range selections for privacy (e.g., £50k-£75k)
-- Mark fields as "Prefer not to say" where appropriate
-- Explain why information is required (suitability assessment)
+#### **Dependents and Circumstances:**
+- Number of Dependents (Required)
+- Marital Status (Required)
+- Health Considerations affecting investment (Optional but recommended)
+- Expected Significant Life Changes (Optional)
 
-#### 2.2.2 Investment Knowledge and Experience
+### 2.6 Anti-Money Laundering (AML) Requirements
 
-**Mandatory Assessment Fields:**
+**Source of Funds Declaration:**
+- Primary source of investment funds (Required)
+- Secondary sources (if applicable)
+- Expected account activity level (Required)
+- Purpose of account opening (Required)
+
+**Legal Basis:** MLR 2017, Regulations 27-28  
+**Validation:** Free text with character minimum (50 chars)
+
+---
+
+## 3. CONSENT REQUIREMENTS
+
+### 3.1 Mandatory Consents
+
+#### **Data Processing Consent (UK GDPR Article 6 & 9):**
+
+**Primary Legal Basis:** Legitimate Interest + Contractual Necessity
+
+**Required Consent Text:**
+```
+☐ I consent to [Firm Name] collecting, processing, and storing my personal 
+information for the purposes of:
+  - Providing wealth management and financial advisory services
+  - Conducting suitability assessments and ongoing reviews
+  - Meeting regulatory obligations under FCA rules
+  - Preventing fraud and money laundering
+
+I understand that:
+  - This consent is required to provide the requested services
+  - My data will be processed in accordance with UK GDPR and the firm's 
+    Privacy Policy
+  - I have the right to withdraw consent at any time, which may affect 
+    the firm's ability to provide services
+  - The firm will retain my data for 6 years after the relationship ends 
+    as required by FCA regulations
+
+Date: [Auto-populated]
+```
+
+**Mandatory:** Yes (Checkbox + Timestamp)  
+**Withdrawal Process:** Must be provided
+
+#### **Special Category Data Consent (UK GDPR Article 9):**
+
+```
+☐ I consent to [Firm Name] processing special category data (including 
+health information, if provided) where this is relevant to assessing 
+my financial needs and suitability of advice.
+
+This is optional - I can choose not to provide this information, though 
+it may limit the comprehensiveness of advice.
+```
+
+**Mandatory:** No, but must be presented if collecting health data  
+**Explicit Consent Required:** Yes
+
+### 3.2 Optional Marketing Consents
+
+**Requirement:** Must be separate from service provision consents (ICO guidance)
+
+```
+☐ I consent to receive marketing communications about products and services 
+that may be of interest to me via:
+  ☐ Email
+  ☐ SMS
+  ☐ Post
+  ☐ Telephone
+
+I understand I can withdraw this consent at any time.
+```
+
+**Mandatory:** No  
+**Granular Options:** Yes (per channel)  
+**Pre-ticked:** Not permitted
+
+### 3.3 Third-Party Data Sharing Consent
+
+```
+☐ I consent to [Firm Name] sharing my information with:
+  - Third-party service providers (for platform access, custody services)
+  - Professional advisors (accountants, solicitors) where relevant
+  - Regulatory authorities as required by law
+
+A full list of data processors is available in our Privacy Policy.
+```
+
+**Mandatory:** Yes for service provision  
+**Link to Privacy Policy:** Required
+
+### 3.4 Electronic Communications Consent
+
+```
+☐ I consent to receive contractual documentation, including suitability 
+reports, valuations, and regulatory communications via electronic means.
+
+I understand I can request paper copies at any time.
+```
+
+**Mandatory:** No, but recommended  
+**Legal Basis:** COBS 2.1.9R - Client's consent required
+
+### 3.5 Automated Decision-Making Notice
+
+If using automated risk profiling or robo-advice elements:
+
+```
+☐ I acknowledge that [Firm Name] may use automated processing to:
+  - Assess my risk profile
+  - Generate preliminary investment recommendations
+  - Monitor portfolio performance
+
+I understand that:
+  - I have the right to human intervention in decision-making
+  - I can request an explanation of automated decisions
+  - Final investment decisions require human advisor review
+```
+
+**Mandatory:** If automated processing used (UK GDPR Article 22)
+
+---
+
+## 4. DATA RETENTION POLICIES
+
+### 4.1 Retention Periods by Data Type
+
+| Data Category | Retention Period | Legal Basis | Destruction Method |
+|---------------|------------------|-------------|-------------------|
+| Client identification data | 6 years from end of relationship | FCA Handbook, SYSC 9.1 | Secure deletion/shredding |
+| Fact-find information | 6 years from end of relationship | COBS 9.2 | Secure deletion |
+| Suitability assessments | Indefinite (recommended 15 years) | COBS 9.4.7R | Secure archival |
+| Communications records | 6 years from date | COBS 11.8 | Secure deletion |
+| Complaints records | 6 years from complaint resolution | DISP 1.9 | Secure archival |
+| AML documentation | 6 years from end of relationship | MLR 2017, Reg 40 | Secure deletion |
+| Marketing consent records | Until withdrawal + 3 years | ICO guidance | Secure deletion |
+| Consent audit trail | Duration of processing + 3 years | UK GDPR accountability | Secure archival |
+
+### 4.2 Retention Schedule Implementation
+
+**Technical Requirements:**
+- Automated retention scheduling system
+- Flagging for review at retention expiry
+- Secure deletion protocols (data wiping standards)
+- Audit logging of all deletions
+- Backup retention alignment
+
+**Process Requirements:**
+- Annual review of retention schedule
+- Data Protection Officer oversight
+- Client notification before destruction (optional, recommended)
+- Exception handling for ongoing legal matters
+
+---
+
+## 5. RIGHT TO BE FORGOTTEN (ERASURE) PROVISIONS
+
+### 5.1 UK GDPR Article 17 Compliance
+
+**Client Rights:**
+Clients may request erasure of their personal data under certain circumstances.
+
+**Exemptions Applicable to Wealth Management:**
+
+1. **Regulatory Obligation** (Article 17(3)(b))
+   - Cannot erase data required for 6-year FCA retention
+   - AML records must be retained per MLR 2017
+   - Cannot erase if prevents compliance with legal obligations
+
+2. **Legal Claims** (Article 17(3)(e))
+   - Data required for establishment, exercise, or defense of legal claims
+   - Complaints under investigation
+   - Ongoing litigation
+
+3. **Public Interest/Official Authority** (Article 17(3)(b))
+   - Regulatory investigations
+   - FCA information requests
+
+### 5.2 Erasure Request Handling Process
+
+**Timeline:** Response within 1 month (extendable to 3 months for complex requests)
+
+**Workflow for Web Form:**
+```
+1. Request Receipt
+   ↓
+2. Identity Verification (prevent fraudulent requests)
+   ↓
+3. Legal Exemption Assessment
+   ↓
+4. Partial vs. Full Erasure Determination
+   ↓
+5. Client Communication (what can/cannot be deleted and why)
+   ↓
+6. Execute Erasure (if applicable)
+   ↓
+7. Third-Party Notification (if data shared)
+   ↓
+8. Confirmation to Client
+   ↓
+9. Audit Log Entry
+```
+
+**Technical Requirements:**
+- Erasure request function in web form
+- Identity verification mechanism
+- Automated exemption flagging
+- Audit trail of all erasure activities
+- Third-party data processor notification system
+
+### 5.3 Restricted Processing Alternative
+
+When full erasure is not possible:
+
+**Offer Option:**
+- Restriction of processing (UK GDPR Article 18)
+- Data retention in archive-only state
+- No active processing except for storage
+- Available for legal claims only
+
+**Communication Template Required:**
+```
+"While we cannot fully delete your data due to [regulatory obligation], 
+we can restrict its processing. This means:
+- Your data will be securely stored but not actively used
+- It will only be accessed if required by law or regulatory authority
+- It will be deleted at the end of the mandatory retention period
+- You will be notified before any resumption of processing"
+```
+
+---
+
+## 6. UK GDPR COMPLIANCE MEASURES
+
+### 6.1 Lawful Basis for Processing
+
+**Primary Bases for Wealth Management Web Form:**
+
+| Processing Activity | Lawful Basis | GDPR Article |
+|---------------------|--------------|--------------|
+| Basic client onboarding | Contractual necessity | Article 6(1)(b) |
+| AML/KYC checks | Legal obligation | Article 6(1)(c) |
+| Suitability assessment | Legitimate interest + Contract | Article 6(1)(b)(f) |
+| Marketing | Consent | Article 6(1)(a) |
+| Health data (if collected) | Explicit consent | Article 9(2)(a) |
+| Regulatory reporting | Legal obligation | Article 6(1)(c) |
+
+**Documentation Required:**
+- Legitimate Interest Assessment (LIA) for Article 6(1)(f) processing
+- Record of Processing Activities (ROPA)
+- Data Protection Impact Assessment (see Section 7)
+
+### 6.2 Data Minimization Requirements
+
+**Principle:** Only collect data necessary for specified purposes (Article 5(1)(c))
+
+**Implementation:**
+- All fields must have documented necessity justification
+- Optional fields clearly marked
+- Progressive disclosure (multi-step form)
+- Conditional logic (only show relevant fields)
+- Regular review of collected fields (annual minimum)
+
+**Examples:**
+- ✓ **Necessary:** National Insurance Number (AML requirement)
+- ✗ **Unnecessary:** Dietary preferences (unless relevant to hospitality events - requires separate consent)
+- ? **Conditional:** Number of children (necessary for estate planning, not for general investment)
+
+### 6.3 Privacy by Design and Default
+
+**Technical Measures:**
+- Default to minimum data collection
+- Privacy-preserving form design
+- Encryption in transit (TLS 1.3 minimum)
+- Encryption at rest (AES-256 minimum)
+- Access controls and authentication
+- Session timeout (15 minutes recommended)
+- Progressive form saving (encrypted)
+
+**Organizational Measures:**
+- Privacy review in development lifecycle
+- Data Protection Officer consultation
+- Privacy impact assessment
+- Regular privacy audits
+- Staff training on data protection
+
+### 6.4 Transparency Requirements
+
+**Privacy Information to Provide (Article 13):**
+
+Must be provided BEFORE data collection:
+
+1. **Identity of Controller:** Firm name, registration details
+2. **Data Protection Officer Contact:** Email and address
+3. **Purposes of Processing:** Specific purposes for each data category
+4. **Lawful Basis:** Which GDPR article applies
+5. **Recipients:** Who will receive the data
+6. **International Transfers:** If data leaves UK (requires additional safeguards)
+7. **Retention Periods:** How long data will be kept
+8. **Individual Rights:** Full list of rights under UK GDPR
+9. **Right to Withdraw Consent:** How and effect of withdrawal
+10. **Right to Complain:** ICO contact details
+11. **Contractual Requirement:** Whether provision of data is mandatory
+12. **Automated Decision-Making:** If used, logic and consequences
+
+**Implementation:**
+- Privacy Notice available before form completion
+- Link on every page of form
+- Just-in-time privacy notices (contextual pop-ups)
+- Layered approach (short notice + full policy)
+- Clear, plain language (no legal jargon)
+
+### 6.5 Individual Rights Mechanisms
+
+**Rights to Facilitate:**
+
+| Right | Implementation in Web Form | Response Time |
+|-------|---------------------------|---------------|
+| Right to Access (Article 15) | Download my data function | 1 month |
+| Right to Rectification (Article 16) | Edit profile function, update requests | 1 month |
+| Right to Erasure (Article 17) | Deletion request function | 1 month |
+| Right to Restrict Processing (Article 18) | Restriction request mechanism | 1 month |
+| Right to Data Portability (Article 20) | Structured data export (JSON/CSV) | 1 month |
+| Right to Object (Article 21) | Objection to processing form | Immediate for marketing |
+
+**Technical Requirements:**
+- Self-service portal for exercising rights
+- Secure identity verification
+- Automated data export functionality
+- Audit trail of all rights requests
+- Workflow for manual review where needed
+
+### 6.6 Data Security Measures (Article 32)
+
+**Required Security Controls:**
+
+**Technical:**
+- Multi-factor authentication (MFA)
+- Role-based access control (RBAC)
+- Encryption: TLS 1.3+ (transit), AES-256 (rest)
+- Secure session management
+- Input validation and sanitization (prevent injection attacks)
+- Regular vulnerability scanning
+- Penetration testing (annual minimum)
+- Web Application Firewall (WAF)
+- DDoS protection
+- Secure backup with encryption
+- Pseudonymization where possible
+- Database encryption
+
+**Organizational:**
+- Access logging and monitoring
+- Incident response plan
+- Breach notification procedures (72 hours to ICO)
+- Staff security training
+- Vendor security assessments
+- Data processing agreements with third parties
+- Regular security audits
+- Disaster recovery plan
+- Business continuity plan
+
+### 6.7 International Data Transfers
+
+**If using non-UK hosting or processors:**
+
+**Requirement:** Adequate safeguards for international transfers (Chapter V)
+
+**Options:**
+1. **Adequacy Decision:** EU/EEA countries have adequacy
+2. **Standard Contractual Clauses (SCCs):** Use UK International Data Transfer Agreement
+3. **Binding Corporate Rules:** For intra-group transfers
+
+**Implementation:**
+- Identify all international data flows
+- Map data processor locations
+- Implement appropriate transfer mechanisms
+- Document in privacy notice
+- Regular review of adequacy decisions
+
+**Recommendation:** Use UK or EU-based hosting for simplicity
+
+---
+
+## 7. DATA PROTECTION IMPACT ASSESSMENT (DPIA)
+
+### 7.1 DPIA Requirement Triggers
+
+**UK GDPR Article 35 - DPIA Required When:**
+- ✓ Systematic and extensive profiling (risk profiling qualifies)
+- ✓ Large-scale processing of special category data (if collecting health data)
+- ✓ Systematic monitoring (ongoing client monitoring)
+- ? New technology use (depends on implementation)
+
+**Recommendation:** **DPIA IS REQUIRED** for this web form project
+
+### 7.2 DPIA Process
+
+**Stage 1: Necessity and Proportionality Assessment**
+- Justify data collection
+- Consider alternatives
+- Demonstrate benefits outweigh risks
+
+**Stage 2: Risk Identification**
+| Risk Category | Specific Risks | Likelihood | Impact | Mitigation |
+|---------------|----------------|------------|---------|------------|
+| Unauthorized Access | Data breach via web vulnerabilities | Medium | High | WAF, encryption, MFA, penetration testing |
+| Data Loss | Server failure, deletion error | Low | High | Encrypted backups, RAID, disaster recovery |
+| Identity Theft | Stolen credentials, session hijacking | Medium | High | MFA, session timeout, secure cookies |
+| Regulatory Non-compliance | Missing mandatory fields, retention errors | Medium | High | Compliance validation, audit trails |
+| Third-party Breach | Processor security failure | Low | High | Vendor assessments, DPA requirements |
+| Insider Threat | Staff unauthorized access | Low | Medium | RBAC, access logging, background checks |
+
+**Stage 3: Risk Mitigation Measures**
+- Document all security controls
+- Assign responsibility for implementation
+- Set timelines for deployment
+- Define residual risk acceptance criteria
+
+**Stage 4: DPO and Stakeholder Consultation**
+- Data Protection Officer review
+- Legal counsel review
+- Information security team input
+- Business stakeholder approval
+
+**Stage 5: Approval and Sign-off**
+- Senior management approval
+- Document decision-making rationale
+- Define review triggers and schedule
+
+**Stage 6: Ongoing Review**
+- Annual review minimum
+- Review on significant system changes
+- Review on new data processing activities
+- Review on security incidents
+
+### 7.3 DPIA Documentation Requirements
+
+**Must Include:**
+- Description of processing operations
+- Assessment of necessity and proportionality
+- Assessment of risks to individual rights
+- Measures to address risks
+- Safeguards and security measures
+- DPO opinion
+- Approval signatures
+
+**Deliverable:** Completed DPIA document before web form goes live
+
+---
+
+## 8. FIELD VALIDATION RULES
+
+### 8.1 Data Quality Standards
+
+**Purpose:** Ensure data accuracy for regulatory compliance (UK GDPR Article 5(1)(d))
+
+### 8.2 Validation Rules by Field Type
+
+#### **Name Fields:**
+```
+Full Legal Name:
+- Minimum: 2 characters
+- Maximum: 100 characters
+- Allowed: Letters, spaces, hyphens, apostrophes, accented characters
+- Pattern: ^[A-Za-zÀ-ÿ\s'-]{2,100}$
+- Required: Yes
+- Error message: "Please enter your full legal name as it appears on official documents"
+```
+
+#### **Date of Birth:**
+```
+- Format: DD/MM/YYYY
+- Validation: Valid date
+- Age check: ≥18 years (wealth management restriction)
+- Maximum age: 120 years (data quality check)
+- Required: Yes
+- Error message: "You must be 18 or over to use our services"
+```
+
+#### **National Insurance Number:**
+```
+- Format: XX123456X
+- Pattern: ^[A-CEGHJ-PR-TW-Z]{1}[A-CEGHJ-NPR-TW-Z]{1}[0-9]{6}[A-D]{1}$
+- Required: Yes (AML requirement)
+- Error message: "Please enter a valid National Insurance number (e.g., QQ123456C)"
+```
+
+#### **Email Address:**
+```
+- Format: RFC 5322 compliant
+- Pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+- Maximum: 254 characters
+- Required: Yes
+- Verification: Email confirmation link sent
+- Error message: "Please enter a valid email address"
+```
+
+#### **UK Phone Number:**
+```
+- Format: +44 or 0 prefix
+- Pattern: ^(\+44\s?|0)(\d{10}|\d{4}\s?\d{6}|\d{3}\s?\d{3}\s?\d{4})$
+- Allow spaces and hyphens
+- Strip to numeric for storage
+- Required: Yes
+- Error message: "Please enter a valid UK phone number"
+```
+
+#### **UK Postcode:**
+```
+- Format: UK postcode standard
+- Pattern: ^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$
+- Case insensitive input, store uppercase
+- Required: Yes
+- Validation: Check against PAF (optional but recommended)
+- Error message: "Please enter a valid UK postcode"
+```
+
+#### **Financial Values:**
+```
+Income/Asset Fields:
+- Type: Numeric
+- Minimum: 0
+- Maximum: 999,999,999,999
+- Decimal places: 2
+- Format: Currency (£)
+- Allow: Numbers, comma thousands separators
+- Strip: £, commas before storage
+- Required: Yes for mandatory fields
+- Error message: "Please enter a valid amount"
+```
+
+#### **Risk Tolerance Score:**
+```
+- Type: Integer
+- Minimum: 1
+- Maximum: 10
+- Required: Yes
+- Dependent validation: Must align with questionnaire responses
+- Error message: "Please complete the risk questionnaire"
+```
+
+### 8.3 Cross-field Validation Rules
+
+```
+Address History:
+IF time_at_current_address < 3 years
+THEN previous_address = REQUIRED
+```
+
+```
+Employment Details:
+IF employment_status IN ['Employed', 'Self-employed']
+THEN occupation AND employer_name = REQUIRED
+```
+
+```
+PEP Disclosure:
+IF pep_status = 'Yes'
+THEN pep_position AND pep_country = REQUIRED
+```
 
 ```
 Investment Experience:
-□ Investment products previously held (multi-select):
-  - Savings accounts
-  - Stocks and shares ISAs
-  - Individual stocks/bonds
-  - Investment funds
-  - Pensions
-  - Alternative investments
-  - Derivatives/structured products
-  
-□ Years of investment experience: [Dropdown: 0, <1, 1-3, 3-5, 5-10, 10+]
-
-□ Frequency of investments: [Never / Rarely / Occasionally / Regularly]
-
-□ Professional qualifications in finance: [Yes/No + Details]
-
-□ Relevant professional experience: [Yes/No + Details]
+IF professional_client_request = 'Yes'
+THEN investment_qualifications OR large_portfolio_evidence = REQUIRED
 ```
 
-**Validation Rule:** Minimum knowledge assessment required before offering complex products (COBS 10 - Appropriateness)
+```
+Consent Dependencies:
+IF special_category_data_provided = TRUE
+THEN explicit_consent_special_data = REQUIRED
+```
 
-#### 2.2.3 Investment Objectives and Risk Tolerance
+### 8.4 Real-time Validation Requirements
 
-**Mandatory Objective Fields:**
+**User Experience Standards:**
+- Validate on field blur (after user leaves field)
+- Display inline error messages
+- Use clear, helpful error text
+- Highlight invalid fields visually
+- Prevent form submission if validation errors exist
+- Provide validation summary at top of form
+- Retain valid data if user navigates back
 
-| Field | Type | Options | Compliance Requirement |
-|-------|------|---------|----------------------|
-| Investment Time Horizon | Radio | <1yr, 1-3yr, 3-5yr, 5-10yr, 10yr+ | COBS 9.2.2R(1) |
-| Primary Investment Objective | Multi-select | Capital preservation, Income, Growth, Balanced | COBS 9.2.2R(2) |
-| Risk Tolerance | Scale (1-10) | With explanatory text for each level | COBS 9.2.2R(3) |
-| Capacity for Loss | Dropdown | With scenario descriptions | COBS 9.2.2R(3) |
-| Liquidity Needs | Text/Radio | Anticipated withdrawals | COBS 9.2.2R |
-
-**Risk Assessment Questions (Mandatory):**
-
-1. "How would you react if your investment fell by 10% in value?"
-2. "Can you afford to lose any of the money you're investing?"
-3. "How important is it to access your money at short notice?"
-4. "What is more important: protecting your capital or achieving growth?"
-
-**Validation:** Risk profile must be calculated and displayed before submission
-
-#### 2.2.4 Tax Status Information
-
-**Mandatory Tax Fields:**
-
-| Field | Requirement | Notes |
-|-------|-------------|-------|
-| UK Tax Resident | Yes/No | Mandatory - affects reporting |
-| Tax Residence Countries | Multi-select | If non-UK or dual |
-| Tax Identification Numbers | Text fields | For all relevant jurisdictions |
-| US Person Status | Yes/No | FATCA compliance |
-| ISA Eligibility | Auto-calculated | Based on tax residence |
+**Accessibility:**
+- ARIA labels for error messages
+- Screen reader announcements for errors
+- Keyboard navigation support
+- WCAG 2.1 AA compliance minimum
 
 ---
 
-## 3. UK GDPR AND DATA PROTECTION REQUIREMENTS
-
-### 3.1 Legal Basis for Processing
-
-**Primary Legal Bases:**
-
-1. **Contractual Necessity** (Article 6(1)(b))
-   - Processing necessary to enter into contract for wealth management services
-   - Applies to: Personal details, financial information, contact data
-
-2. **Legal Obligation** (Article 6(1)(c))
-   - AML/KYC checks required by MLR 2017
-   - FCA regulatory reporting
-   - Applies to: Identity verification, source of funds, beneficial ownership
-
-3. **Legitimate Interests** (Article 6(1)(f))
-   - Fraud prevention
-   - Risk assessment
-   - Requires: Legitimate Interest Assessment (LIA) documentation
-
-4. **Consent** (Article 6(1)(a))
-   - Marketing communications
-   - Non-essential cookies/tracking
-   - Sharing data with third parties for non-regulatory purposes
-
-### 3.2 Consent Mechanisms - Technical Requirements
-
-#### 3.2.1 Mandatory Consent Checkboxes
-
-**Structure Required:**
-
-```html
-<!-- Essential Processing Notice (Non-optional) -->
-<div class="gdpr-notice mandatory">
-  <p><strong>Essential Data Processing</strong></p>
-  <p>We will process your personal information to:
-    • Provide wealth management services
-    • Comply with legal and regulatory obligations (AML, FCA reporting)
-    • Manage our business relationship with you
-  </p>
-  <p>This processing is necessary for us to provide our services and comply 
-     with legal requirements. You cannot opt out of this processing if you 
-     wish to proceed with our services.</p>
-  <p><a href="/privacy-policy" target="_blank">Read our full Privacy Policy</a></p>
-</div>
-
-<!-- Optional Marketing Consent (Granular) -->
-<div class="gdpr-consent optional">
-  <label>
-    <input type="checkbox" name="consent_email_marketing" value="yes">
-    I consent to receiving marketing communications by email about products 
-    and services that may be of interest to me.
-  </label>
-  
-  <label>
-    <input type="checkbox" name="consent_phone_marketing" value="yes">
-    I consent to being contacted by phone for marketing purposes.
-  </label>
-  
-  <label>
-    <input type="checkbox" name="consent_post_marketing" value="yes">
-    I consent to receiving marketing materials by post.
-  </label>
-  
-  <p class="consent-note">You can withdraw your consent at any time by 
-     contacting us or using the unsubscribe link in our communications.</p>
-</div>
-
-<!-- Third Party Data Sharing (If Applicable) -->
-<div class="gdpr-consent optional">
-  <label>
-    <input type="checkbox" name="consent_partner_sharing" value="yes">
-    I consent to my information being shared with trusted partners for 
-    [specific purpose]. <a href="/partner-list">View partners</a>
-  </label>
-</div>
-```
-
-**Compliance Requirements:**
-- Pre-ticked boxes NOT permitted for optional consent
-- Clear separation between mandatory and optional processing
-- Granular consent options (separate checkboxes for each channel)
-- Easy withdrawal mechanism documented
-- Consent records stored with timestamp and IP address
-
-#### 3.2.2 Privacy Notice Requirements
-
-**Mandatory Disclosures (Article 13):**
-
-Must be provided BEFORE data collection begins:
-
-1. **Identity and Contact Details**
-   - Data controller name and registered address
-   - Data Protection Officer contact details
-   - FCA registration number
-
-2. **Processing Information**
-   - Categories of personal data collected
-   - Purposes of processing
-   - Legal basis for each purpose
-   - Retention periods
-   - Automated decision-making (if any)
-
-3. **Data Subject Rights**
-   - Right to access (Subject Access Request)
-   - Right to rectification
-   - Right to erasure ("right to be forgotten")
-   - Right to restrict processing
-   - Right to data portability
-   - Right to object
-   - Right to withdraw consent
-   - Right to lodge complaint with ICO
-
-4. **Data Sharing**
-   - Categories of recipients
-   - International transfers (if any) with safeguards
-   - Service providers (with examples)
-
-**Implementation:**
-- First page of webform must display privacy notice
-- "Layered approach" acceptable (summary + full policy link)
-- Must be accessible, clear, and in plain English
-- Require acknowledgment before proceeding
-
-### 3.3 Data Subject Rights - Form Implications
-
-**Right to Access:**
-- Form must facilitate data export in structured format (JSON/CSV)
-- Provide copy of all submitted data within 1 month
-
-**Right to Rectification:**
-- Enable clients to update information post-submission
-- Audit trail of changes required
-
-**Right to Erasure:**
-- Note: Limited by legal retention obligations
-- After retention period, automated deletion process required
-- Exception: Cannot delete if legal obligation to retain (AML = 5 years)
-
-**Right to Data Portability:**
-- Provide machine-readable export of data
-- Structured format (JSON recommended)
-
----
-
-## 4. ANTI-MONEY LAUNDERING (AML) COMPLIANCE
-
-### 4.1 Customer Due Diligence (CDD) Requirements - MLR 2017
-
-#### 4.1.1 Standard CDD - Mandatory Fields
-
-**Identity Verification:**
-
-| Requirement | Form Implementation | Documentation |
-|-------------|---------------------|---------------|
-| Full legal name | Text input (mandatory) | Match to ID document |
-| Date of birth | Date picker (mandatory) | Match to ID document |
-| Residential address | Address lookup + manual | Verify via utility bill/bank statement |
-| Identification number | NI Number/Passport (mandatory) | Government-issued ID |
-
-**Document Upload Requirements:**
-
-```
-Mandatory Document Uploads:
-1. Proof of Identity (one of):
-   - UK Passport
-   - UK Driving License (photocard)
-   - National ID card (EEA)
-   - Biometric Residence Permit
-
-2. Proof of Address (dated within 3 months, one of):
-   - Utility bill
-   - Bank/credit card statement
-   - Council tax bill
-   - HMRC correspondence
-   - Mortgage statement
-
-File Requirements:
-- Formats: PDF, JPG, PNG
-- Max size: 5MB per file
-- Clear, color, full document visible
-- Unaltered and valid
-```
-
-**Validation Rules:**
-- Name on documents must match form input
-- Address on proof must match residential address
-- DOB must match across documents
-- Documents must be in date/not expired
-
-#### 4.1.2 Enhanced Due Diligence (EDD) Triggers
-
-**Automatic EDD Required If:**
-
-1. **High-risk client indicators:**
-   - Non-UK resident investing significant sums
-   - Politically Exposed Person (PEP) status
-   - Investment >€15,000 from high-risk jurisdiction
-   - Source of wealth unclear/unusual
-
-2. **PEP Screening - Mandatory Questions:**
-
-```
-PEP Status Assessment:
-
-□ Are you, or have you been in the last 12 months, a Politically Exposed Person (PEP)?
-  [Yes/No]
-
-□ Are any of your immediate family members or known close associates PEPs?
-  [Yes/No]
-
-PEP Definition (display):
-A person entrusted with a prominent public function, including:
-- Heads of state, government ministers, senior politicians
-- Senior government, judicial, or military officials
-- Senior executives of state-owned enterprises
-- Important political party officials
-
-If YES to either:
-  → Additional fields appear:
-    - Position/role held: [Text]
-    - Organization: [Text]
-    - Dates held: [Date range]
-    - Country: [Dropdown]
-    - Relationship (if family/associate): [Dropdown]
-```
-
-**Additional EDD Fields:**
-
-| Field | Requirement | Purpose |
-|-------|-------------|---------|
-| Source of Wealth | Mandatory text (if EDD) | Understand origin of funds |
-| Source of Funds for Investment | Mandatory dropdown + text | Specific to this investment |
-| Occupation Details | Enhanced detail required | Risk assessment |
-| Business Interests | Declare all directorships | Conflict/sanctions check |
-| Expected Account Activity | Transaction volume/value | Baseline for monitoring |
-
-#### 4.1.3 Source of Funds/Wealth Declaration
-
-**Mandatory for Investments >£10,000:**
-
-```
-Source of Funds for this Investment (select all that apply):
-
-□ Salary/Employment Income
-  → Employer name: [Text]
-  → Occupation: [Text]
-  
-□ Business Profits
-  → Business name: [Text]
-  → Nature of business: [Text]
-  → Your role: [Text]
-  
-□ Sale of Property
-  → Property address: [Text]
-  → Sale date: [Date]
-  → Sale value: [Currency]
-  
-□ Inheritance
-  → Relationship to deceased: [Text]
-  → Approximate date: [Date]
-  
-□ Gift
-  → Relationship to donor: [Text]
-  → Donor name: [Text]
-  
-□ Investment Returns
-  → Type of investment: [Text]
-  
-□ Sale of Business
-  → Business name and details: [Text]
-  
-□ Other
-  → Please specify: [Text area - mandatory]
-
-Supporting Documentation (if source >£50,000):
-[File upload] - e.g., payslips, business accounts, completion statement, probate
-```
-
-**Validation Rules:**
-- At least one source must be selected
-- If "Other", text explanation mandatory
-- For amounts >£50,000, supporting documents required
-- Internal review flag if source appears unusual
-
-### 4.2 Sanctions and PEP Screening
-
-**Technical Implementation Requirements:**
-
-1. **Automated Screening:**
-   - Integrate with sanctions list API (HMT, OFSI, UN, EU)
-   - Screen against PEP databases
-   - Run check on form submission
-   - Re-check periodically during relationship
-
-2. **Screening Data Points:**
-   - Full name + variations
-   - Date of birth
-   - Nationality
-   - Residential address
-   - Any business associations disclosed
-
-3. **Match Handling:**
-   - Potential match = halt onboarding pending review
-   - Record screening results with timestamp
-   - MLRO review required for any matches
-   - Cannot proceed until cleared
-
-**Form Implementation:**
-```
-[Background process - not visible to client]
-On submission:
-  → Screen against sanctions lists
-  → Screen against PEP databases
-  → Screen against adverse media
-  → Generate risk score
-  
-If match/high risk:
-  → Flag for MLRO review
-  → Do not auto-approve
-  → Send holding message to client
-  → Trigger manual compliance workflow
-```
-
-### 4.3 Ongoing Monitoring Requirements
-
-**Data Collection for Monitoring:**
-
-| Field | Purpose | Frequency |
-|-------|---------|-----------|
-| Expected Investment Amount | Establish baseline | Initial + annual review |
-| Expected Transaction Frequency | Establish pattern | Initial + annual review |
-| Expected Source of Future Funds | Monitor consistency | Initial + annual review |
-| Any anticipated changes | Forward-looking | Annual review |
-
-**Audit Trail Requirements:**
-- Log all form access (date, time, IP, user agent)
-- Log all data modifications with timestamp and user
-- Log all document uploads
-- Log all screening results
-- Log all risk assessments and decisions
-- Retain logs for 5 years minimum
-
----
-
-## 5. MANDATORY DISCLOSURES AND WARNINGS
-
-### 5.1 FCA-Required Warnings
-
-#### 5.1.1 Risk Warnings (COBS 2.1.1R)
-
-**Display Requirements:**
-- Must be clear, fair, and not misleading
-- Appropriate prominence
-- Cannot be hidden in T&Cs
-
-**Standard Risk Warning Text:**
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  ⚠️  INVESTMENT RISK WARNING                            │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  The value of investments can go down as well as up     │
-│  and you may get back less than you invested.           │
-│                                                          │
-│  Past performance is not a reliable indicator of        │
-│  future results.                                         │
-│                                                          │
-│  The tax treatment depends on your individual           │
-│  circumstances and may be subject to change.            │
-│                                                          │
-│  [For non-advised services:]                            │
-│  If you are in any doubt about the suitability of       │
-│  an investment, you should seek independent financial   │
-│  advice.                                                 │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-
-☐ I have read and understood the investment risk warning
-```
-
-**Placement:** Must appear before final submission and require acknowledgment
-
-#### 5.1.2 Service Description and Limitations
-
-**Mandatory Disclosure:**
-
-```
-Service Type Declaration:
-
-This service provides [select applicable]:
-□ Independent advice
-□ Restricted advice  
-□ Execution-only service (no advice)
-
-[If restricted:]
-We only offer products from [specify: limited panel/single provider/own products]
-
-[If execution-only:]
-We will not advise you on the suitability of products. You will make your own 
-investment decisions. This means you will not benefit from the protection of 
-the FCA rules on assessing suitability.
-
-You have the right to request a different service if available.
-```
-
-#### 5.1.3 Costs and Charges Disclosure (COBS 2.2A)
-
-**Pre-contract Information:**
-
-```
-Costs and Charges
-
-Before we provide our services, you will receive:
-• A detailed breakdown of all costs and charges
-• Information about how costs impact returns over time
-• Details of any commissions or incentives we receive
-
-Initial Indication of Costs [if known]:
-- Initial advice fee: [Amount/percentage]
-- Ongoing management fee: [Amount/percentage]
-- Product charges: [Range or TBC]
-- Transaction costs: [Range or TBC]
-
-Full costs disclosure will be provided before you commit to any investment.
-
-☐ I understand I will receive detailed costs information before proceeding
-```
-
-**Implementation:** 
-- Cannot be bypassed
-- Must be presented in tabular format where specific
-- Ex-ante costs disclosure required before contract
-
-### 5.2 FSCS Protection Notice
-
-**Mandatory Display:**
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  Financial Services Compensation Scheme (FSCS)          │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  We are covered by the Financial Services Compensation  │
-│  Scheme (FSCS).                                          │
-│                                                          │
-│  You may be entitled to compensation from the scheme    │
-│  if we cannot meet our obligations. This depends on     │
-│  the type of business and circumstances of the claim.   │
-│                                                          │
-│  Most types of investment business are covered up to    │
-│  £85,000.                                                │
-│                                                          │
-│  Further information about the compensation scheme      │
-│  is available from the FSCS:                            │
-│  www.fscs.org.uk or call 0800 678 1100                  │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Placement:** Must appear in client agreement section
-
-### 5.3 Complaints Procedure
-
-**Mandatory Information:**
-
-```
-How to Make a Complaint
-
-If you are unhappy with our service, please contact:
-
-[Compliance Officer Name]
-[Company Name]
-[Address]
-Email: complaints@[company].co.uk
-Phone: [Number]
-
-We will acknowledge your complaint within 5 business days and aim to 
-resolve it within 8 weeks.
-
-If you are not satisfied with our response, or we have not resolved your 
-complaint within 8 weeks, you may refer your complaint to:
-
-Financial Ombudsman Service
-Exchange Tower
-London E14 9SR
-Phone: 0800 023 4567
-Email: complaint.info@financial-ombudsman.org.uk
-Website: www.financial-ombudsman.org.uk
-```
-
-**Implementation:** Include link in footer and confirmation email
-
----
-
-## 6. DATA RETENTION AND DELETION POLICIES
-
-### 6.1 Regulatory Retention Requirements
-
-**Minimum Retention Periods:**
-
-| Data Type | Retention Period | Legal Basis | Deletion Policy |
-|-----------|------------------|-------------|-----------------|
-| AML/KYC Records | 5 years from end of relationship | MLR 2017 Reg 40 | Auto-delete after 5y + 1 month |
-| Client Identity Documents | 5 years from end of relationship | MLR 2017 | Secure deletion after period |
-| Fact-find Information | 5 years from advice given | FCA COBS/SYSC | Archive after 1y, delete after 5y |
-| Suitability Reports | Indefinitely (recommend 10y min) | FCA COBS 9.4 | Review at 10y intervals |
-| Consent Records | Duration of processing + 3 years | UK GDPR accountability | Delete after processing ends + 3y |
-| Marketing Consents | Until withdrawn + 3 years | UK GDPR/PECR | Delete on withdrawal + 3y |
-| Client Communications | 5 years minimum | FCA SYSC | Delete after 6 years |
-| Transaction Records | 5 years minimum | FCA CASS/COBS | Delete after 6 years |
-| Complaints Records | 5 years from complaint closure | FCA DISP | Delete after 5 years |
-| Audio Recordings (if applicable) | 5 years | MiFID II | Secure deletion after 5y |
-
-### 6.2 Data Lifecycle Management
-
-**Technical Implementation:**
-
-```
-Data States and Transitions:
-
-1. ACTIVE (0-12 months from collection)
-   - Full accessibility
-   - Regular processing permitted
-   - Stored in primary database
-   - Encrypted at rest
-
-2. ARCHIVED (12 months - retention period)
-   - Restricted access (compliance/legal only)
-   - Move to archive storage
-   - Compressed/encrypted
-   - Read-only
-
-3. DELETION-PENDING (End of retention period)
-   - 30-day grace period
-   - Automated review for exceptions
-   - Legal hold check
-   - Notification to DPO
-
-4. DELETED (After retention + grace)
-   - Secure deletion (3-pass overwrite minimum)
-   - Delete from backups
-   - Certificate of deletion generated
-   - Logged in deletion register
-```
-
-**Exception Handling:**
-- Legal hold: Suspend deletion if litigation/investigation
-- Subject access request in progress: Retain until complete
-- Active complaint: Retain until complaint + 5 years
-- Regulatory investigation: Retain until closure + 2 years
-
-### 6.3 Right to Erasure - Limitations
-
-**When Right to Erasure DOES NOT Apply:**
-
-1. **Legal Obligation** (Article 17(3)(b))
-   - Cannot delete AML records for 5 years (legal requirement)
-   - Cannot delete regulatory reporting data during retention period
-
-2. **Legal Claims** (Article 17(3)(e))
-   - Data needed to establish, exercise, or defend legal claims
-
-3. **Public Interest** (Article 17(3)(e))
-   - FCA regulatory oversight
-   - Financial crime prevention
-
-**Client Communication:**
-```
-If client requests deletion during retention period:
-
-"We have received your request to delete your personal data. While we 
-respect your right to erasure under UK GDPR, we are legally required to 
-retain certain information for [X] years under:
-
-- Money Laundering Regulations 2017 (5 years)
-- FCA regulatory requirements (5 years minimum)
-
-We will:
-1. Delete all data not subject to legal retention requirements
-2. Restrict processing of retained data to legal compliance only
-3. Remove your data from all marketing lists immediately
-4. Delete the remaining data automatically on [date]
-
-We have marked your account for deletion on [date]. You will receive 
-confirmation when deletion is complete."
-```
-
----
-
-## 7. FORM FIELD REQUIREMENTS - COMPREHENSIVE SPECIFICATION
-
-### 7.1 Multi-Step Form Structure
-
-**Recommended Step Sequence:**
-
-```
-Step 1: Welcome and Privacy Notice
-├─ Display privacy notice (summary + full link)
-├─ Essential processing explanation
-├─ Cookie consent
-└─ Acknowledgment required to proceed
-
-Step 2: Personal Details
-├─ Full legal name
-├─ Date of birth
-├─ Contact details
-├─ Address (current + historical if <3 years)
-├─ National Insurance Number
-└─ Nationality/Tax residence
-
-Step 3: Identity Verification
-├─ Document uploads (ID + proof of address)
-├─ PEP declaration
-├─ Sanctions screening (background)
-└─ Verification status
-
-Step 4: Employment and Financial Situation
-├─ Employment status
-├─ Occupation details
-├─ Income assessment
-├─ Assets and liabilities
-└─ Regular expenditure
-
-Step 5: Investment Experience and Knowledge
-├─ Previous investment products
-├─ Years of experience
-├─ Professional qualifications
-├─ Knowledge assessment questions
-└─ Appropriateness evaluation
-
-Step 6: Investment Objectives and Risk
-├─ Investment objectives
-├─ Time horizon
-├─ Risk tolerance questionnaire
-├─ Capacity for loss
-└─ Risk profile calculation
-
-Step 7: Source of Funds
-├─ Source of wealth
-├─ Source of funds for this investment
-├─ Expected investment amount
-└─ Supporting documentation (if required)
-
-Step 8: Service Selection and Agreements
-├─ Service type confirmation
-├─ Client categorization notice
-├─ Terms of business
-├─ Costs and charges acknowledgment
-└─ Risk warnings
-
-Step 9: Consents and Preferences
-├─ Marketing consents (granular)
-├─ Communication preferences
-├─ Data sharing consents (if applicable)
-└─ Third-party cookies
-
-Step 10: Review and Submit
-├─ Summary of all information
-├─ Edit option for each section
-├─ Final declarations
-├─ Electronic signature
-└─ Submit button
-```
-
-### 7.2 Mandatory vs. Optional Fields Matrix
-
-| Field Category | Field Name | Mandatory? | Basis | Validation |
-|----------------|------------|------------|-------|------------|
-| **PERSONAL DETAILS** |
-| | Title | Optional | Courtesy | Mr/Mrs/Miss/Ms/Mx/Dr/Other |
-| | First Name | **Mandatory** | KYC/AML | Min 1 char, letters only |
-| | Middle Name(s) | Optional | Complete record | Letters only |
-| | Last Name | **Mandatory** | KYC/AML | Min 1 char, letters only |
-| | Previous Names | Recommended | AML | If changed in last 5 years |
-| | Preferred Name | Optional | Client service | Any |
-| | Date of Birth | **Mandatory** | KYC/AML | Age ≥18, valid date |
-| | Place of Birth | **Mandatory** | AML (EDD) | Country + City |
-| | Gender | Optional | None | Male/Female/Other/Prefer not to say |
-| | Marital Status | Recommended | Fact-find | Single/Married/Civil Partner/Divorced/Widowed |
-| | National Insurance Number | **Mandatory** (UK residents) | Tax/ID | Format: AA999999A |
-| | Passport Number | Conditional | AML verification | If primary ID |
-| | Nationality | **Mandatory** | AML/Tax | ISO country code |
-| **CONTACT DETAILS** |
-| | Primary Email | **Mandatory** | Communication/ID | RFC 5322 + verification |
-| | Secondary Email | Optional | Backup | RFC 5322 |
-| | Mobile Number | **Mandatory** | Communication/2FA | UK format + SMS verify |
-| | Home Phone | Optional | Alternative contact | UK format |
-| | Work Phone | Optional | Alternative contact | UK format |
-| | Preferred Contact Method | **Mandatory** | GDPR preference | Email/Phone/Post |
-| | Preferred Contact Time | Optional | Service | Morning/Afternoon/Evening |
-| **ADDRESS INFORMATION** |
-| | Current Address Line 1 | **Mandatory** | KYC/AML | Not PO Box |
-| | Current Address Line 2 | Optional | Complete address | Any |
-| | Current Town/City | **Mandatory** | KYC/AML | Letters, spaces, hyphens |
-| | Current County | Optional | Complete address | Dropdown |
-| | Current Postcode | **Mandatory** | KYC/AML | UK postcode validation |
-| | Time at Current Address | **Mandatory** | AML | Years + Months |
-| | Previous Address (if <3y) | **Conditional** | AML requirement | Same format as current |
-| | Correspondence Address | Optional | If different | Same format |
-| **TAX INFORMATION** |
-| | UK Tax Resident | **Mandatory** | Tax reporting | Yes/No |
-| | Other Tax Residencies | Conditional | CRS/FATCA | If non-UK or dual |
-| | Tax ID Numbers | Conditional | Tax reporting | For each jurisdiction |
-| | US Person | **Mandatory** | FATCA | Yes/No + explanation if yes |
-| **EMPLOYMENT** |
-| | Employment Status | **Mandatory** | Fact-find/AML | Employed/Self-employed/Retired/Unemployed/Student/Other |
-| | Employer Name | Conditional | Source of funds | If employed/self-employed |
-| | Job Title/
+## 9. COMPLIANCE POLICIES AND PROCEDURES
+
+### 9.1 Client Onboarding Policy
+
+**Purpose:** Ensure compliant client data collection and classification
+
+**Policy Statements:**
+
+1. **Client Classification (COBS 3.5)**
+   - All new clients default to "Retail Client" classification
+   - Professional client election requires explicit request and verification
+   - Classification must be confirmed in writing
+   - Annual review of client classification required
+
+2. **Suitability Assessment (COBS 9.2)**
+   - Fact-find must be completed before providing advice
+   - Information must be adequate for suitability determination
+   - Gaps in information must be documented and addressed
+   - Suitability report must be provided before transaction
+
+3. **Know Your Client (AML)**
+   - Identity verification required before account activation
+   - Source of wealth documentation required for large investments (£50,000+)
+   - Enhanced due diligence for PEPs
+   - Ongoing monitoring of client activity
+
+4. **Data Quality**
+   - All mandatory fields must be completed
+   - Validation errors must be resolved before submission
+   - Client confirmation of accuracy required
+   - Update requests processed within 5 business days
+
+### 9.2 Data Protection and Privacy Policy
+
+**Policy Elements:**
+
+1. **Data Collection Principles**
+   - Collect only necessary data
+   - Obtain informed consent before collection
+   - Provide privacy information before collection
+   - Use secure collection methods (HTTPS, encryption)
+
+2. **Data Storage and Security**
+   - Encrypt data at rest and in transit
+   - Implement access controls based on need-to-know
+   - Log all data access and modifications
+   - Regular security assessments and updates
+
+3. **Data Sharing**
+   - Share data only with consent or legal obligation
+   - Data Processing Agreements with all third parties
+   - Document all data sharing arrangements
+   - Notify clients of data processors
+
+4. **Data Subject Rights**
+   - Process rights requests within legal timelines
+   - Verify identity before fulfilling requests
+   - Document all rights requests and responses
+   - Provide reasons for refusal if applicable
+
+5. **Data Breach Response**
+   - Detect and contain breaches immediately
+   - Assess breach severity and risk to individuals
+   - Notify ICO within 72 hours if high risk
+   - Notify affected individuals without undue delay
+   - Document all breaches regardless of reporting requirement
+
+### 9.3 Record Keeping and Retention Policy
+
+**Policy Statements:**
+
+1. **Retention Schedule Compliance**
+   - Adhere to 6-year minimum retention for client records (FCA)
+   - Indefinite retention of suitability reports (recommended)
+   - Automated retention enforcement
+   - Annual review of retention schedule
+
+2. **Record Quality**
+   - Maintain complete and accurate records
+   - Records must be readily accessible
+   - Format must enable retrieval and analysis
+   - Backup and disaster recovery procedures
+
+3. **Secure Destruction**
+   - Destruction only after retention period expires
+   - Secure deletion methods (data wiping standards)
+   - Certificate of destruction for physical records
+   - Audit trail of all destruction activities
+
+### 9.4 Access Control and Authorization Policy
+
+**Policy Elements:**
+
+1. **User Access Levels**
+   - Role-Based Access Control (RBAC)
+   - Principle of least privilege
+   - Segregation of duties
+   - Regular access reviews (quarterly)
+
+**Access Levels for Web Form System:**
+| Role | Access Rights | Data Visibility |
+|------|--------------|-----------------|
+| Client | Own data only | Full personal data |
+| Adviser | Assigned clients | Full client data |
+| Compliance Officer | All clients (read-only) | Full data + audit logs |
+| System Administrator | System configuration | No client data unless justified |
+| Data Protection Officer | All data | Full data + processing records |
+
+2. **Authentication Requirements**
+   - Multi-factor authentication for staff
+   - Strong password policy (12+ chars, complexity)
+   - Password expiry (90 days)
+   - Account lockout after failed attempts
+   - Session timeout (15 minutes inactivity)
+
+3. **Monitoring and Logging**
+   - Log all data access and modifications
+   - Alert on unusual access patterns
+   - Regular log reviews
+   - Retain logs for 6 years
+
+### 9.5 Third-Party Data Processor Management
+
+**Policy Requirements:**
+
+1. **Vendor Selection**
+   - Security assessment before engagement
+   - Privacy and security certifications (ISO 27001, Cyber Essentials Plus)
+   - Financial stability assessment
+   - References and track record review
+
+2. **Contractual Requirements**
+   - Data Processing Agreement (DPA) required
+   - UK GDPR Article 28 compliance
+   - Security obligations specified
+   - Audit rights included
+   - Sub-processor approval requirements
+   - Data breach notification obligations (24 hours)
+   - Deletion/return of data on termination
+
+3. **Ongoing Management**
+   - Annual security reassessments
+   - Performance monitoring
+   - Incident reporting and management
+   - Regular communication and updates
+
+### 9.6 Training and Awareness Policy
+
+**Requirements:**
+
+1. **Staff Training**
+   -

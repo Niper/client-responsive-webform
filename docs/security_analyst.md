@@ -1,4 +1,4 @@
-# Data Security and Compliance Testing
+# Security Testing and Compliance Validation
 
 **Agent:** security_analyst
 **Job:** Client Responsive Webform
@@ -6,1043 +6,949 @@
 ---
 
 # Security Testing and Compliance Validation Report
+
 ## Client Responsive Webform - UK Wealth Management Firm
 
-**Document Version:** 1.0  
-**Date:** 2024  
-**Classification:** CONFIDENTIAL  
-**Prepared by:** Security Analyst Agent
+**Report Date:** 2024
+**Classification:** Confidential
+**Version:** 1.0
 
 ---
 
 ## Executive Summary
 
-This comprehensive security testing and compliance validation report covers the Client Responsive Webform application for a UK wealth management firm. The assessment includes penetration testing, vulnerability assessment, security code review, and regulatory compliance validation against FCA requirements and UK GDPR.
+This comprehensive security testing and compliance validation report addresses the Client Responsive Webform for a UK wealth management firm. The assessment encompasses penetration testing, encryption verification, authentication/authorization testing, GDPR compliance, FCA regulatory requirements, and privacy mechanism validation.
 
 **Key Findings Summary:**
-- Security Risk Level: To be determined post-testing
-- Compliance Status: To be validated
-- Critical Issues: TBD
-- High Priority Items: TBD
-- Recommendations: Detailed below
+- Critical security controls required before production deployment
+- GDPR and FCA compliance framework defined
+- 12 high-priority security tests identified
+- Comprehensive remediation roadmap provided
 
 ---
 
-## Table of Contents
+## 1. Comprehensive Security Risk Assessment
 
-1. [Security Testing Methodology](#1-security-testing-methodology)
-2. [OWASP Top 10 Assessment](#2-owasp-top-10-assessment)
-3. [Penetration Testing Results](#3-penetration-testing-results)
-4. [Vulnerability Assessment](#4-vulnerability-assessment)
-5. [Security Code Review](#5-security-code-review)
-6. [Encryption & Data Protection Controls](#6-encryption--data-protection-controls)
-7. [Authentication & Authorization Testing](#7-authentication--authorization-testing)
-8. [UK GDPR Compliance Validation](#8-uk-gdpr-compliance-validation)
-9. [FCA Regulatory Compliance](#9-fca-regulatory-compliance)
-10. [Session Management & Timeout Testing](#10-session-management--timeout-testing)
-11. [Backup & Recovery Procedures](#11-backup--recovery-procedures)
-12. [Compliance Checklist](#12-compliance-checklist)
-13. [Remediation Roadmap](#13-remediation-roadmap)
-14. [Appendices](#14-appendices)
+### 1.1 Asset Classification
+
+| Asset Type | Sensitivity Level | Regulatory Impact |
+|------------|------------------|-------------------|
+| Personal Identity Information (PII) | Critical | GDPR, DPA 2018 |
+| Financial Data | Critical | FCA, GDPR |
+| Fact-find Information | High | FCA COBS, GDPR |
+| Contact Details | High | GDPR |
+| Session Tokens | Critical | Security |
+| Audit Logs | High | FCA, GDPR |
+
+### 1.2 Threat Model
+
+#### Attack Vectors & Mitigations
+
+**1. Application Layer Attacks**
+
+| Threat | Likelihood | Impact | Mitigation Priority |
+|--------|-----------|--------|---------------------|
+| SQL Injection | High | Critical | P0 |
+| Cross-Site Scripting (XSS) | High | High | P0 |
+| CSRF Attacks | Medium | High | P0 |
+| XML/JSON Injection | Medium | High | P1 |
+| Server-Side Request Forgery | Low | Medium | P2 |
+
+**2. Authentication & Session Management**
+
+| Threat | Likelihood | Impact | Mitigation Priority |
+|--------|-----------|--------|---------------------|
+| Credential Stuffing | High | Critical | P0 |
+| Session Hijacking | Medium | Critical | P0 |
+| Brute Force Attacks | High | High | P0 |
+| Session Fixation | Low | High | P1 |
+| Password Reset Exploitation | Medium | High | P1 |
+
+**3. Data Protection Threats**
+
+| Threat | Likelihood | Impact | Mitigation Priority |
+|--------|-----------|--------|---------------------|
+| Data Breach via Storage | Medium | Critical | P0 |
+| Man-in-the-Middle | Medium | Critical | P0 |
+| Insecure Data Transmission | Low | Critical | P0 |
+| Unauthorized Data Access | Medium | Critical | P0 |
 
 ---
 
-## 1. Security Testing Methodology
+## 2. Security Testing Methodology
 
-### 1.1 Testing Approach
+### 2.1 Testing Scope
 
-**Testing Framework:**
-- OWASP Testing Guide v4.2
-- NIST SP 800-115 Technical Guide to Information Security Testing
-- CREST Penetration Testing Methodology
-- FCA Cyber Security Guidelines
-
-**Testing Phases:**
-1. **Reconnaissance & Information Gathering**
-2. **Vulnerability Identification**
-3. **Exploitation Attempts (Controlled)**
-4. **Post-Exploitation Analysis**
-5. **Compliance Validation**
-6. **Reporting & Remediation**
-
-### 1.2 Testing Scope
-
-**In-Scope Components:**
-- Multi-step web form interface (all steps)
-- Backend API endpoints
+**In-Scope:**
+- Web application (all form steps)
+- API endpoints
 - Database layer
 - Authentication mechanisms
-- Session management
-- Data encryption (in-transit and at-rest)
-- File upload functionality (if applicable)
-- Error handling and logging
-- Third-party integrations
-- Administrative interfaces
+- Data storage and encryption
+- UK-specific validation logic
+- Privacy and consent workflows
 
 **Out-of-Scope:**
-- Infrastructure penetration testing (network layer)
-- Social engineering attacks
+- Network infrastructure (unless directly impacting application)
+- Third-party service providers (separate assessment required)
 - Physical security
-- DoS/DDoS testing (production environment)
 
-### 1.3 Testing Tools
+### 2.2 Testing Environment
 
-**Automated Tools:**
-- OWASP ZAP (vulnerability scanning)
-- Burp Suite Professional (web application security)
-- Nmap (port scanning and service detection)
-- SQLMap (SQL injection testing)
-- Nikto (web server scanner)
-- SSLyze (SSL/TLS configuration analysis)
-- Dependency-Check (vulnerable component analysis)
-
-**Manual Testing Tools:**
-- Postman/Insomnia (API testing)
-- Browser Developer Tools
-- cURL (request manipulation)
-- Custom Python scripts for specific tests
+**Requirements:**
+- Isolated testing environment mirroring production
+- Test data compliant with GDPR (synthetic/anonymized)
+- Separate test database
+- Comprehensive logging enabled
+- Version control snapshot for rollback
 
 ---
 
-## 2. OWASP Top 10 Assessment
+## 3. Penetration Testing Protocol
 
-### 2.1 A01:2021 - Broken Access Control
+### 3.1 SQL Injection Testing
 
-**Test Cases:**
-- [ ] Horizontal privilege escalation (accessing other clients' data)
-- [ ] Vertical privilege escalation (accessing admin functions)
-- [ ] Direct object reference manipulation (changing form IDs in URLs)
-- [ ] Missing function-level access control
-- [ ] CORS misconfiguration allowing unauthorized access
-- [ ] Forced browsing to restricted pages
+#### Test Cases:
 
-**Testing Procedures:**
+**TC-SQL-01: Input Field SQL Injection**
 ```
-TEST-001: Direct Object Reference
-1. Submit form with client ID = 1001
-2. Intercept response and note client reference
-3. Create new session, modify request to access client 1001
-4. EXPECTED: Access denied with 403 error
-5. ACTUAL: [TO BE COMPLETED]
+Test Inputs:
+- Name field: ' OR '1'='1
+- Email field: admin'--
+- Address field: '; DROP TABLE clients;--
+- Phone: 1' UNION SELECT * FROM users--
 
-TEST-002: Multi-step Form Navigation
-1. Access step 5 of form without completing steps 1-4
-2. EXPECTED: Redirect to step 1 or session validation error
-3. ACTUAL: [TO BE COMPLETED]
+Expected Result: All inputs sanitized/rejected
+Validation Method: 
+- Input validation rejects malicious patterns
+- Parameterized queries prevent execution
+- Database logs show no unauthorized queries
+- Error messages don't reveal database structure
 ```
 
-**Required Controls:**
-- ✓ Server-side authorization checks on every request
-- ✓ Session-based validation of form progression
-- ✓ Resource-level access control (per-client data isolation)
-- ✓ Anti-CSRF tokens on all state-changing operations
-- ✓ Deny-by-default access control policy
+**TC-SQL-02: Blind SQL Injection**
+```
+Test Inputs:
+- Time-based: 1' AND SLEEP(5)--
+- Boolean-based: 1' AND '1'='1
+- Error-based: 1' AND CONVERT(int, (SELECT @@version))--
+
+Expected Result: No time delays, no conditional responses
+Validation Method: Response time analysis, behavior consistency
+```
+
+**TC-SQL-03: Second-Order SQL Injection**
+```
+Test Scenario:
+1. Submit form with payload: test'); DROP TABLE clients;--
+2. Verify data storage
+3. Trigger data retrieval/processing
+4. Verify database integrity
+
+Expected Result: Payload stored as string, never executed
+```
+
+#### SQL Injection Security Controls Checklist:
+
+- [ ] Parameterized queries/prepared statements implemented
+- [ ] ORM (Object-Relational Mapping) properly configured
+- [ ] Input validation on all form fields
+- [ ] Least privilege database accounts
+- [ ] Stored procedures used where applicable
+- [ ] Error messages sanitized (no SQL details exposed)
+- [ ] Web Application Firewall (WAF) rules configured
+- [ ] Database activity monitoring enabled
 
 ---
 
-### 2.2 A02:2021 - Cryptographic Failures
+### 3.2 Cross-Site Scripting (XSS) Testing
 
-**Test Cases:**
-- [ ] TLS configuration (version, cipher suites)
-- [ ] Certificate validation
-- [ ] Sensitive data in transit encryption
-- [ ] Sensitive data at rest encryption
-- [ ] Password storage mechanism
-- [ ] Encryption key management
-- [ ] Backup encryption
+#### Test Cases:
 
-**Testing Procedures:**
+**TC-XSS-01: Reflected XSS**
 ```
-TEST-003: TLS Configuration
-Tool: SSLyze
-Command: sslyze --regular [domain]
-Verify:
-- TLS 1.2+ only (TLS 1.3 preferred)
-- Strong cipher suites (ECDHE, AES-GCM)
-- No SSL v2/v3, TLS 1.0/1.1
-- Perfect Forward Secrecy enabled
-- Valid certificate chain
-- HSTS header present
+Test Inputs:
+- Name: <script>alert('XSS')</script>
+- Address: <img src=x onerror=alert('XSS')>
+- Email: test@test.com<script>alert(document.cookie)</script>
+- URL Parameters: ?step=<script>alert('XSS')</script>
 
-TEST-004: Data at Rest Encryption
-1. Review database encryption configuration
-2. Verify AES-256 or equivalent for PII/financial data
-3. Check encryption key storage (HSM/KMS preferred)
-4. Validate field-level encryption for sensitive data:
-   - National Insurance numbers
-   - Bank account details
-   - Investment portfolio information
-   - Income/wealth data
+Expected Result: Scripts encoded/sanitized, not executed
+Validation Method: 
+- View page source for HTML encoding
+- Browser console shows no script execution
+- Content-Security-Policy headers active
 ```
 
-**Required Standards:**
-- TLS 1.2 minimum (TLS 1.3 recommended)
-- AES-256 for data at rest
-- bcrypt/Argon2 for password hashing (min. 12 rounds)
-- Separate encryption keys per data classification
-- Key rotation policy (annually minimum)
+**TC-XSS-02: Stored XSS**
+```
+Test Scenario:
+1. Submit form with: <svg/onload=alert('Stored XSS')>
+2. Admin views submitted data
+3. Client dashboard displays data
+
+Expected Result: Script encoded in storage and display
+Validation Method: Check database, admin panel, client views
+```
+
+**TC-XSS-03: DOM-Based XSS**
+```
+Test JavaScript Manipulation:
+- Client-side validation bypass
+- Hash fragment injection: #<img src=x onerror=alert(1)>
+- LocalStorage/SessionStorage manipulation
+
+Expected Result: Client-side sanitization prevents execution
+```
+
+**TC-XSS-04: Advanced XSS Payloads**
+```
+Test Inputs:
+- Event handlers: <body onload=alert('XSS')>
+- JavaScript protocol: <a href="javascript:alert('XSS')">
+- SVG vectors: <svg><script>alert('XSS')</script></svg>
+- CSS injection: <style>@import'http://attacker.com/xss.css';</style>
+- Polyglot: jaVasCript:/*-/*`/*\`/*'/*"/**/(/* */onerror=alert('XSS') )//%0D%0A%0d%0a//</stYle/</titLe/</teXtarEa/</scRipt/--!>\x3csVg/<sVg/oNloAd=alert('XSS')//>\x3e
+```
+
+#### XSS Security Controls Checklist:
+
+- [ ] Output encoding implemented (HTML, JavaScript, URL, CSS contexts)
+- [ ] Content Security Policy (CSP) headers configured
+- [ ] HTTPOnly and Secure flags on cookies
+- [ ] Input validation whitelist approach
+- [ ] DOM manipulation sanitization (DOMPurify or similar)
+- [ ] Template engine auto-escaping enabled
+- [ ] X-XSS-Protection header configured
+- [ ] Regular expression validation for expected patterns
 
 ---
 
-### 2.3 A03:2021 - Injection
+### 3.3 Cross-Site Request Forgery (CSRF) Testing
 
-**Test Cases:**
-- [ ] SQL Injection (all input fields)
-- [ ] NoSQL Injection (if applicable)
-- [ ] OS Command Injection
-- [ ] LDAP Injection
-- [ ] XPath Injection
-- [ ] Template Injection
-- [ ] Server-Side Request Forgery (SSRF)
+#### Test Cases:
 
-**Critical Fields for Testing:**
-```
-High-Risk Input Fields:
-1. Name fields (First name, Last name, Middle name)
-2. Address fields (Street, City, Postcode)
-3. Email address
-4. Phone number
-5. National Insurance number
-6. Search/filter functionality
-7. File upload fields
-8. Any custom query parameters
-```
+**TC-CSRF-01: Form Submission CSRF**
+```html
+Test Attack Page:
+<!DOCTYPE html>
+<html>
+<body>
+<form action="https://wealthmanagement.co.uk/api/submit-client" method="POST" id="csrf">
+  <input type="hidden" name="name" value="Attacker Name">
+  <input type="hidden" name="email" value="attacker@evil.com">
+  <input type="hidden" name="account_type" value="premium">
+</form>
+<script>document.getElementById('csrf').submit();</script>
+</body>
+</html>
 
-**Testing Procedures:**
-```
-TEST-005: SQL Injection - Basic
-Payloads:
-- ' OR '1'='1
-- 1' ORDER BY 1--
-- 1' UNION SELECT NULL--
-- '; DROP TABLE clients--
-Test on: All text inputs, search fields, hidden parameters
-
-TEST-006: SQL Injection - Advanced
-- Time-based blind injection
-- Boolean-based blind injection
-- Error-based injection
-Tool: SQLMap with --risk=3 --level=5
-
-TEST-007: OS Command Injection
-Payloads (if file upload exists):
-- filename.pdf; ls -la
-- filename.pdf && whoami
-- filename.pdf | cat /etc/passwd
+Expected Result: Request rejected due to missing/invalid CSRF token
+Validation Method: 
+- 403 Forbidden or similar error
+- No data saved to database
+- Security event logged
 ```
 
-**Required Controls:**
-- ✓ Parameterized queries/prepared statements (100% coverage)
-- ✓ Input validation (whitelist approach)
-- ✓ ORM usage with proper escaping
-- ✓ Least privilege database accounts
-- ✓ Web Application Firewall (WAF) with injection rules
+**TC-CSRF-02: AJAX Request CSRF**
+```javascript
+Test Script:
+fetch('https://wealthmanagement.co.uk/api/update-profile', {
+  method: 'POST',
+  credentials: 'include',
+  body: JSON.stringify({email: 'attacker@evil.com'})
+});
+
+Expected Result: CORS policy blocks request, anti-CSRF token required
+```
+
+**TC-CSRF-03: Multi-Step Form CSRF**
+```
+Test Scenario:
+1. Initiate form at step 1
+2. Attempt to jump to step 3 via crafted request
+3. Submit final step with forged data
+
+Expected Result: Session state validation prevents skip/manipulation
+```
+
+#### CSRF Security Controls Checklist:
+
+- [ ] Synchronizer tokens implemented on all state-changing operations
+- [ ] SameSite cookie attribute configured (Strict/Lax)
+- [ ] Double-submit cookie pattern for AJAX requests
+- [ ] Origin/Referer header validation
+- [ ] Custom request headers for API calls
+- [ ] Token rotation per session/request
+- [ ] CORS policy properly configured
+- [ ] Re-authentication for sensitive operations
 
 ---
 
-### 2.4 A04:2021 - Insecure Design
+### 3.4 Additional Vulnerability Testing
 
-**Test Cases:**
-- [ ] Business logic flaws
-- [ ] Rate limiting on form submission
-- [ ] Account enumeration protection
-- [ ] Secure form progression logic
-- [ ] Data retention policies implementation
-- [ ] Consent management workflow
-
-**Testing Procedures:**
+#### TC-AUTH-01: Authentication Bypass
 ```
-TEST-008: Business Logic - Form Submission
-1. Submit same form data multiple times
-2. EXPECTED: Duplicate detection or rate limiting
-3. Test rapid form submissions (>10/minute)
-4. EXPECTED: Rate limiting after threshold
+Test Scenarios:
+1. Direct URL access to form steps without authentication
+2. Parameter manipulation: ?user_id=1 to ?user_id=2
+3. Role escalation: client to admin
+4. JWT token manipulation (if used)
+5. Session token prediction
 
-TEST-009: Account Enumeration
-1. Enter existing email in form
-2. Enter non-existing email in form
-3. EXPECTED: Generic response (no difference in timing/message)
-
-TEST-010: Data Minimization
-1. Review all collected fields
-2. Verify each field has documented business justification
-3. Check for excessive data collection
-4. Validate data retention periods are enforced
+Expected Result: All unauthorized access attempts blocked
 ```
 
-**Required Design Patterns:**
-- Secure by default configuration
-- Principle of least privilege
-- Defense in depth
-- Zero trust architecture
-- Privacy by design (GDPR requirement)
-
----
-
-### 2.5 A05:2021 - Security Misconfiguration
-
-**Test Cases:**
-- [ ] Default credentials
-- [ ] Directory listing enabled
-- [ ] Unnecessary features enabled
-- [ ] Error handling reveals sensitive info
-- [ ] Security headers missing
-- [ ] Outdated software versions
-- [ ] Unnecessary ports/services exposed
-
-**Testing Procedures:**
+#### TC-AUTHZ-01: Authorization Testing
 ```
-TEST-011: HTTP Security Headers
-Required Headers:
-✓ Strict-Transport-Security: max-age=31536000; includeSubDomains
-✓ Content-Security-Policy: default-src 'self'
-✓ X-Frame-Options: DENY
-✓ X-Content-Type-Options: nosniff
-✓ Referrer-Policy: strict-origin-when-cross-origin
-✓ Permissions-Policy: geolocation=(), microphone=()
+Test Scenarios:
+1. Access other clients' data via ID manipulation
+2. Admin functions accessible to regular users
+3. API endpoint authorization checks
+4. File upload directory traversal: ../../etc/passwd
 
-TEST-012: Error Handling
-1. Trigger various errors (invalid input, server errors)
-2. EXPECTED: Generic error messages only
-3. NOT ACCEPTABLE: Stack traces, database errors, file paths
-
-TEST-013: Information Disclosure
-Check for exposure of:
-- Software versions in headers
-- Internal IP addresses
-- Database schema information
-- Development/debug endpoints
-- .git, .env, config files
+Expected Result: Proper role-based access control enforced
 ```
 
-**Security Configuration Checklist:**
+#### TC-ENC-01: Encryption Verification
 ```
-Web Server:
-□ Remove default pages and error pages
-□ Disable directory browsing
-□ Configure custom error pages
-□ Remove server version headers
-□ Disable unnecessary HTTP methods (TRACE, OPTIONS)
-
-Application:
-□ Disable debug mode in production
-□ Remove development endpoints
-□ Configure secure session cookies
-□ Set appropriate CORS policies
-□ Implement rate limiting
-
-Database:
-□ Change default passwords
-□ Remove default/test databases
-□ Configure IP whitelisting
-□ Enable audit logging
-□ Encrypt connections
-```
-
----
-
-### 2.6 A06:2021 - Vulnerable and Outdated Components
-
-**Test Cases:**
-- [ ] Frontend library vulnerabilities (React, Vue, jQuery, etc.)
-- [ ] Backend framework vulnerabilities
-- [ ] Third-party package vulnerabilities
-- [ ] Outdated SSL/TLS libraries
-- [ ] Vulnerable npm/pip packages
-
-**Testing Procedures:**
-```
-TEST-014: Dependency Scanning
-Tools: 
-- npm audit (for Node.js)
-- pip-audit (for Python)
-- OWASP Dependency-Check
-- Snyk
-
-Process:
-1. Scan all dependencies
-2. Identify CVEs with CVSS > 7.0 (HIGH/CRITICAL)
-3. Check for available patches
-4. Document remediation timeline
-
-TEST-015: Version Detection
-1. Identify all frameworks and libraries
-2. Compare against latest stable versions
-3. Check EOL status
-4. Verify security patch compliance
-```
-
-**Dependency Management Requirements:**
-- Automated vulnerability scanning in CI/CD
-- Monthly dependency updates
-- Security patch deployment within 14 days (critical), 30 days (high)
-- Software Bill of Materials (SBOM) maintained
-- No use of EOL software
-
----
-
-### 2.7 A07:2021 - Identification and Authentication Failures
-
-**Test Cases:**
-- [ ] Weak password requirements
-- [ ] Credential stuffing protection
-- [ ] Brute force protection
-- [ ] Session fixation
-- [ ] Weak session ID generation
-- [ ] Missing multi-factor authentication (where required)
-- [ ] Insecure password recovery
-
-**Testing Procedures:**
-```
-TEST-016: Authentication Strength (Admin/Staff Access)
-Password Requirements:
-✓ Minimum 12 characters
-✓ Complexity (upper, lower, number, special char)
-✓ No common passwords (check against top 10k list)
-✓ Password history (prevent reuse of last 12)
-✓ Account lockout after 5 failed attempts
-✓ MFA required for privileged access
-
-TEST-017: Session Management
-1. Obtain valid session token
-2. Analyze token entropy and predictability
-3. Test session fixation attack
-4. Verify session invalidation on logout
-5. Check session timeout implementation
-6. Verify secure and httpOnly cookie flags
-
-TEST-018: Brute Force Protection
-1. Attempt multiple failed logins
-2. EXPECTED: Account lockout or rate limiting
-3. Verify CAPTCHA after N attempts
-4. Check for timing attack vulnerabilities
-```
-
-**Authentication Requirements for Wealth Management:**
-- Multi-factor authentication for staff/admin access
-- Single sign-on (SSO) integration capability
-- Strong session management
-- Audit logging of authentication events
-- Password complexity enforcement
-- Account lockout policies
-- Secure password reset mechanism
-
----
-
-### 2.8 A08:2021 - Software and Data Integrity Failures
-
-**Test Cases:**
-- [ ] Insecure deserialization
-- [ ] Unsigned code/updates
-- [ ] Compromised third-party resources (CDN)
-- [ ] Insecure CI/CD pipeline
-- [ ] Lack of integrity verification
-
-**Testing Procedures:**
-```
-TEST-019: Third-Party Resource Integrity
-1. Identify all external resources (CDN, libraries)
-2. Verify Subresource Integrity (SRI) hashes present
-3. Example:
-   <script src="https://cdn.example.com/lib.js" 
-           integrity="sha384-..." 
-           crossorigin="anonymous"></script>
-
-TEST-020: Data Integrity
-1. Test form data tampering in transit
-2. Verify digital signatures on critical data
-3. Check audit log integrity (append-only, tamper-evident)
-4. Validate backup integrity checks
-
-TEST-021: Deserialization Testing
-1. Identify serialization points (JSON, XML, binary)
-2. Attempt object injection attacks
-3. Test with modified serialized data
-4. Verify input validation before deserialization
-```
-
-**Required Controls:**
-- Subresource Integrity (SRI) for all external resources
-- Code signing for deployments
-- Immutable audit logs
-- Digital signatures for critical data
-- Input validation before deserialization
-
----
-
-### 2.9 A09:2021 - Security Logging and Monitoring Failures
-
-**Test Cases:**
-- [ ] Authentication events logged
-- [ ] Authorization failures logged
-- [ ] Input validation failures logged
-- [ ] Log tampering protection
-- [ ] Log retention compliance
-- [ ] Real-time alerting for suspicious activity
-- [ ] PII in logs
-
-**Testing Procedures:**
-```
-TEST-022: Security Event Logging
-Events that MUST be logged:
-✓ User authentication (success/failure)
-✓ Form submission (with client reference, not full data)
-✓ Access to sensitive data
-✓ Permission changes
-✓ Session creation/destruction
-✓ Input validation failures
-✓ Rate limit violations
-✓ Administrative actions
-
-Log Format Requirements:
-- Timestamp (UTC, ISO 8601)
-- Event type
-- User identifier
-- Source IP address
-- User agent
-- Result (success/failure)
-- Session ID
-
-TEST-023: Log Integrity
-1. Attempt to modify log files
-2. EXPECTED: Prevention or tamper detection
-3. Verify log centralization
-4. Check write-once storage
-
-TEST-024: PII in Logs
-1. Review log samples
-2. Verify NO logging of:
-   - Passwords
-   - National Insurance numbers
-   - Bank account details
-   - Full credit card numbers
-   - Session tokens
-3. Only log sanitized/masked data
-```
-
-**UK GDPR Logging Requirements:**
-- Log all access to personal data
-- Retain logs for 6 years (FCA requirement)
-- Implement log monitoring and alerting
-- Protect logs as personal data themselves
-- Support data subject access requests (DSAR) using logs
-
----
-
-### 2.10 A10:2021 - Server-Side Request Forgery (SSRF)
-
-**Test Cases:**
-- [ ] SSRF via URL input fields
-- [ ] SSRF via file upload (XML, PDF)
-- [ ] DNS rebinding attacks
-- [ ] Access to internal services
-- [ ] Cloud metadata access (AWS, Azure, GCP)
-
-**Testing Procedures:**
-```
-TEST-025: SSRF Detection
-Test Scenarios (if URL input exists):
-1. Attempt to access internal IP ranges:
-   - http://127.0.0.1
-   - http://169.254.169.254 (AWS metadata)
-   - http://10.0.0.0/8
-   - http://192.168.0.0/16
-   - http://172.16.0.0/12
-
-2. Attempt DNS rebinding
-3. Test for blind SSRF (out-of-band detection)
-
-TEST-026: File Upload SSRF
-If file upload exists:
-1. Upload XML with external entity
-2. Upload SVG with embedded URLs
-3. Upload HTML with meta refresh
-```
-
-**Mitigation Requirements:**
-- Input validation with whitelist of allowed domains
-- Network segmentation (application isolated from internal services)
-- Disable unnecessary URL schemes (file://, gopher://, etc.)
-- Sanitize file uploads
-
----
-
-## 3. Penetration Testing Results
-
-### 3.1 External Penetration Testing
-
-**Scope:** Public-facing web application
-
-**Test Cases:**
-
-#### 3.1.1 Reconnaissance
-```
-TEST-027: Information Gathering
-Tools: Shodan, Google Dorking, DNS enumeration
-
-Checks:
-□ Publicly exposed services
-□ Subdomain enumeration
-□ Email addresses in public repositories
-□ Sensitive data in search engines
-□ DNS records analysis (SPF, DMARC, DKIM)
-□ SSL certificate transparency logs
-□ Historical data (Wayback Machine)
-
-Expected Findings: None
-Actual Findings: [TO BE COMPLETED]
-```
-
-#### 3.1.2 Network Layer Testing
-```
-TEST-028: Port Scanning
-Tool: Nmap
-Command: nmap -sV -sC -A [target]
-
-Expected Open Ports:
-- 443 (HTTPS) - ALLOWED
-- 80 (HTTP - redirect to HTTPS) - ALLOWED
-
-Unexpected Ports (security issue if found):
-- 22 (SSH)
-- 3306 (MySQL)
-- 5432 (PostgreSQL)
-- 27017 (MongoDB)
-- 8080 (Alternative HTTP)
-
-Finding: [TO BE COMPLETED]
-```
-
-#### 3.1.3 Web Application Attacks
-```
-TEST-029: Automated Vulnerability Scan
-Tool: OWASP ZAP - Active Scan
-Configuration:
-- Attack strength: Medium (production)
-- Threshold: Low
-- Scan Policy: OWASP Top 10
-
-TEST-030: Manual Exploitation Attempts
-Focus Areas:
-1. Authentication bypass
-2. Session hijacking
-3. SQL injection exploitation
-4. XSS payload execution
-5. File upload vulnerabilities
-6. CSRF attack chains
-7. Business logic exploitation
-
-Results: [TO BE COMPLETED]
-```
-
-### 3.2 Internal Security Testing
-
-**Scope:** Application behavior, API security, data handling
-
-#### 3.2.1 API Security Testing
-```
-TEST-031: API Endpoint Discovery
-1. Map all API endpoints
-2. Test authentication requirements
-3. Verify authorization enforcement
-4. Check rate limiting
-5. Test input validation
-
-Endpoints to Test:
-- POST /api/client/create
-- POST /api/client/update
-- GET /api/client/{id}
-- POST /api/factfind/submit
-- POST /api/document/upload
-- GET /api/admin/*
-- POST /api/consent/record
-
-TEST-032: API Authentication & Authorization
-For each endpoint:
-1. Access without authentication
-2. Access with invalid token
-3. Access with expired token
-4. Access with other user's token
-5. Verify proper 401/403 responses
-```
-
-#### 3.2.2 Input Validation Testing
-```
-TEST-033: Field-Level Validation
-
-Personal Details Validation:
-Field: First Name
-- Max length: 50 chars
-- Allowed: Letters, spaces, hyphens, apostrophes
-- XSS payload: <script>alert('xss')</script>
-- SQL injection: ' OR '1'='1
-- Expected: Sanitized or rejected
-
-Field: Email
-- Format validation: RFC 5322 compliant
-- Max length: 254 chars
-- Test: invalid@, @invalid.com, script@<script>
-- Expected: Proper format validation
-
-Field: Phone Number
-- Format: UK format (+44 or 0)
-- Validation: Numbers, spaces, hyphens only
-- Test: +44 (0)20 7946 0958, (123)456-7890
-- Expected: Accept valid UK formats only
-
-Field: Postcode
-- Format: UK postcode validation
-- Test: SW1A 1AA (valid), AAAA BBBB (invalid)
-- Expected: UK postcode format enforced
-
-Field: National Insurance Number
-- Format: XX 12 34 56 X
-- Validation: Proper NI number format
-- Test: QQ123456C (invalid prefix)
-- Expected: Validation per HMRC rules
-
-Field: Bank Account Number
-- Format: 8 digits
-- Validation: Numeric only
-- Test: 12345678 (valid), ABC12345 (invalid)
-- Modulus checking if implemented
-
-Field: Sort Code
-- Format: 12-34-56
-- Validation: 6 digits, proper format
-- Test: Various UK bank sort codes
-
-TEST-034: File Upload Validation (if applicable)
-Allowed: PDF, DOCX, XLSX, JPG, PNG
-Max size: 10MB
-
 Tests:
-1. Upload .exe file (renamed to .pdf)
-   Expected: MIME type validation rejects
-2. Upload file >10MB
-   Expected: Size limit enforced
-3. Upload file with malicious content
-   Expected: Virus scanning (if implemented)
-4. Upload file with script in metadata
-   Expected: Metadata sanitization
-5. Null byte injection: file.pdf%00.exe
-   Expected: Rejection
+1. TLS version check (TLS 1.2 minimum, prefer 1.3)
+2. Cipher suite analysis (no weak ciphers)
+3. Certificate validation (proper chain, not expired)
+4. HSTS header presence
+5. SSL Labs test (A rating minimum)
+6. Data at rest encryption verification
+7. Key management security review
+
+Tools: testssl.sh, SSL Labs, nmap with ssl-enum-ciphers
 ```
 
-### 3.3 Client-Side Security Testing
-
+#### TC-INPUT-01: Input Validation Testing
 ```
-TEST-035: Client-Side Validation Bypass
-1. Disable JavaScript
-2. Attempt form submission with invalid data
-3. EXPECTED: Server-side validation catches all issues
-4. Use browser dev tools to modify validation rules
-5. EXPECTED: Server-side validation enforces all rules
+UK-Specific Tests:
+1. Postcode validation: 
+   Valid: SW1A 1AA, EC1A 1BB, W1A 0AX
+   Invalid: 12345, AAAAA, SW1A1AA (no space)
+   
+2. Phone number validation:
+   Valid: +44 20 7946 0958, 07700 900123
+   Invalid: 123, (555) 1234, 001-234-5678
+   
+3. National Insurance Number:
+   Valid: QQ 12 34 56 C
+   Invalid: AA 12 34 56 C (invalid prefix)
+   
+4. Sort Code validation: 12-34-56 format
+5. Account Number: 8 digits
+6. Email: RFC 5322 compliance
+7. Name fields: Unicode support, XSS prevention
+8. Address: Special characters handling
+```
 
-TEST-036: DOM-Based XSS
-1. Test all JavaScript that handles user input
-2. Check for dangerous functions:
-   - eval()
-   - innerHTML
-   - document.write()
-3. Test URL parameters reflected in page
-4. Verify Content Security Policy prevents inline scripts
-
-TEST-037: Sensitive Data Exposure (Client-Side)
-Check for:
-□ API keys in JavaScript
-□ Passwords in page source
-□ Personal data in localStorage/sessionStorage
-□ Sensitive data in console logs
-□ Comments with sensitive information
+#### TC-SESS-01: Session Management Testing
+```
+Tests:
+1. Session timeout enforcement (15 minutes inactivity)
+2. Session termination on logout
+3. Concurrent session handling
+4. Session fixation prevention
+5. Session token entropy analysis
+6. Session cookie attributes (Secure, HTTPOnly, SameSite)
+7. Re-authentication for sensitive operations
 ```
 
 ---
 
-## 4. Vulnerability Assessment
+## 4. Data Encryption Verification
 
-### 4.1 Automated Vulnerability Scanning
+### 4.1 Encryption-in-Transit Checklist
 
-**Tools Used:**
-- OWASP ZAP
-- Burp Suite Professional
-- Nessus/Qualys (infrastructure)
-- npm audit / Snyk (dependencies)
+- [ ] **TLS Configuration**
+  - [ ] TLS 1.3 enabled (preferred)
+  - [ ] TLS 1.2 enabled (minimum)
+  - [ ] TLS 1.0/1.1 disabled
+  - [ ] SSL v2/v3 disabled
+  
+- [ ] **Cipher Suites** (Recommended order)
+  - [ ] TLS_AES_256_GCM_SHA384
+  - [ ] TLS_CHACHA20_POLY1305_SHA256
+  - [ ] TLS_AES_128_GCM_SHA256
+  - [ ] Weak ciphers disabled (RC4, DES, 3DES, MD5)
+  
+- [ ] **Certificate Management**
+  - [ ] Valid SSL/TLS certificate from trusted CA
+  - [ ] Certificate expiry > 30 days
+  - [ ] Wildcard certificate or SAN configured
+  - [ ] Certificate pinning implemented (mobile apps)
+  - [ ] OCSP stapling enabled
+  
+- [ ] **Security Headers**
+  - [ ] Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  - [ ] HTTP to HTTPS redirect (301)
+  - [ ] All resources loaded over HTTPS (mixed content check)
 
-**Scan Configuration:**
+### 4.2 Encryption-at-Rest Checklist
+
+- [ ] **Database Encryption**
+  - [ ] Transparent Data Encryption (TDE) enabled
+  - [ ] Column-level encryption for sensitive fields:
+    - [ ] National Insurance Number
+    - [ ] Bank account details
+    - [ ] Date of birth
+    - [ ] Financial information
+  - [ ] Encryption key rotation schedule defined
+  - [ ] Key management via HSM or cloud KMS
+  
+- [ ] **File Storage Encryption**
+  - [ ] Uploaded documents encrypted
+  - [ ] Encryption algorithm: AES-256 minimum
+  - [ ] Encrypted backups
+  - [ ] Secure key storage (not in code/config)
+  
+- [ ] **Application-Level Encryption**
+  - [ ] Passwords hashed with bcrypt/Argon2 (cost factor ≥ 12)
+  - [ ] No reversible encryption for passwords
+  - [ ] API keys/secrets stored in secure vault
+  - [ ] Environment variables encrypted
+
+### 4.3 Encryption Testing Protocol
+
+**Test Case: ENC-VERIFY-01**
+```bash
+# TLS Configuration Test
+nmap --script ssl-enum-ciphers -p 443 wealthmanagement.co.uk
+
+# Expected: Only strong ciphers, TLS 1.2+, A rating
+
+# Certificate Test
+echo | openssl s_client -connect wealthmanagement.co.uk:443 -servername wealthmanagement.co.uk 2>/dev/null | openssl x509 -noout -dates -subject
+
+# Expected: Valid dates, correct subject
 ```
-OWASP ZAP Configuration:
-- Mode: Active Scan
-- Context: Authenticated session
-- Attack Strength: Medium
-- Threshold: Low
-- Scan Policy: All (with custom rules for financial sector)
 
-Scan Coverage:
-□ All form steps (1-N)
-□ Success/error pages
-□ Authentication flows
-□ Administrative interfaces
-□ API endpoints
-□ Static resources
+**Test Case: ENC-VERIFY-02**
+```sql
+-- Database Encryption Verification
+-- Verify TDE status
+SELECT name, is_encrypted FROM sys.databases WHERE name = 'ClientDB';
+
+-- Verify column encryption
+SELECT * FROM sys.column_encryption_keys;
+
+-- Expected: Encryption enabled, keys present
 ```
 
-### 4.2 Vulnerability Classification
+**Test Case: ENC-VERIFY-03**
+```python
+# Password Hashing Verification
+import bcrypt
 
-**Severity Rating Matrix:**
+# Test password storage
+password = "TestPassword123!"
+hashed = hash_password(password)
+
+# Verify:
+# 1. Hash is not reversible
+# 2. Same password produces different hashes (salt)
+# 3. Hash starts with $2a$, $2b$, or $2y$ (bcrypt)
+# 4. Cost factor ≥ 12 (e.g., $2b$12$...)
 ```
-CRITICAL (CVSS 9.0-10.0):
-- Immediate remediation required (24-48 hours)
-- Examples: SQL injection allowing data exfiltration, 
-             Authentication bypass,
-             Unencrypted financial data transmission
-
-HIGH (CVSS 7.0-8.9):
-- Remediation within 7 days
-- Examples: Stored XSS, 
-             Privilege escalation,
-             Sensitive data exposure
-
-MEDIUM (CVSS 4.0-6.9):
-- Remediation within 30 days
-- Examples: Reflected XSS,
-             Information disclosure,
-             Missing security headers
-
-LOW (CVSS 0.1-3.9):
-- Remediation within 90 days
-- Examples: Verbose error messages,
-             Directory listing enabled,
-             Missing best practices
-```
-
-### 4.3 Expected Vulnerability Categories
-
-**Based on wealth management webform context:**
-
-| Category | Risk Level | Testing Priority |
-|----------|-----------|------------------|
-| PII Data Exposure | CRITICAL | 1 |
-| SQL Injection | CRITICAL | 1 |
-| Authentication Weaknesses | HIGH | 1 |
-| XSS (Stored) | HIGH | 2 |
-| CSRF | HIGH | 2 |
-| Access Control Issues | HIGH | 2 |
-| Encryption Failures | HIGH | 1 |
-| Session Management | MEDIUM | 3 |
-| Input Validation | MEDIUM | 2 |
-| Security Misconfiguration | MEDIUM | 3 |
 
 ---
 
-## 5. Security Code Review
+## 5. Authentication and Authorization Testing
 
-### 5.1 Code Review Methodology
+### 5.1 Authentication Testing Protocol
 
-**Review Focus Areas:**
+#### Test Cases:
 
-#### 5.1.1 Secure Coding Practices
+**TC-AUTH-02: Password Policy Enforcement**
 ```
-REVIEW-001: Input Validation
-Location: All form input handlers
-Check for:
-✓ Server-side validation (never trust client)
-✓ Whitelist approach where possible
-✓ Proper regex for specific formats (email, phone, NI number)
-✓ Length restrictions enforced
-✓ Type checking
-✓ Encoding validation
-✓ File upload restrictions
+Test Inputs:
+1. Weak password: "password123"
+2. Short password: "Ab1!"
+3. No uppercase: "password123!"
+4. No numbers: "Password!"
+5. Common password: "Password123!"
+6. Valid password: "W3@lthM@n@g3m3nt2024!"
 
-REVIEW-002: Output Encoding
-Location: All data display points
-Check for:
-✓ Context-aware encoding (HTML, JavaScript, URL, CSS)
-✓ No use of dangerous functions (innerHTML with user input)
-✓ Template auto-escaping enabled
-✓ JSON encoding for API responses
-✓ Proper Content-Type headers
-
-REVIEW-003: Database Interactions
-Location: Data access layer
-Check for:
-✓ 100% parameterized queries
-✓ No string concatenation for SQL
-✓ ORM usage (if applicable)
-✓ Least privilege database accounts
-✓ Connection string security (no hardcoded passwords)
-✓ Prepared statements for all queries
-
-Example - INSECURE:
-query = "SELECT * FROM clients WHERE email = '" + userInput + "'"
-
-Example - SECURE:
-query = "SELECT * FROM clients WHERE email = ?"
-execute(query, [userInput])
+Expected Result:
+- Minimum 12 characters
+- Uppercase, lowercase, number, special character required
+- Common password dictionary check
+- No user information in password (name, email)
+- Password strength meter displayed
 ```
 
-#### 5.1.2 Authentication & Session Management
+**TC-AUTH-03: Multi-Factor Authentication (MFA)**
 ```
-REVIEW-004: Authentication Implementation
-Check for:
-✓ Password hashing (bcrypt/Argon2, not MD5/SHA1)
-✓ Salt per password (automatic with bcrypt)
-✓ Secure session ID generation (cryptographically random)
-✓ Session fixation prevention
-✓ Session invalidation on logout
-✓ Concurrent session handling
-✓ Password reset token security
+Tests:
+1. MFA enrollment process
+2. TOTP code validation (time-based one-time password)
+3. Backup codes generation and usage
+4. MFA bypass attempt (should fail)
+5. Rate limiting on MFA attempts
+6. Recovery process if MFA device lost
 
-REVIEW-005: Session Configuration
-Required Settings:
-✓ session.cookie.secure = true (HTTPS only)
-✓ session.cookie.httpOnly = true (no JavaScript access)
-✓ session.cookie.sameSite = 'strict' or 'lax'
-✓ session.timeout = 15 minutes (for financial applications)
-✓ session.regenerate on privilege changes
+Expected Result: MFA enforced for admin, optional/recommended for clients
 ```
 
-#### 5.1.3 Access Control
+**TC-AUTH-04: Account Lockout**
 ```
-REVIEW-006: Authorization Checks
-Location: Every protected resource
-Check for:
-✓ Authorization check at beginning of function
-✓ No reliance on client-side checks only
-✓ Resource-level access control
-✓ Role-based or attribute-based access control
-✓ Deny by default
-✓ Centralized authorization logic
+Test Scenario:
+1. Attempt login with wrong password 5 times
+2. Verify account locked
+3. Wait for lockout period or admin unlock
+4. Verify login restored
 
-Pattern to Find:
-if (userRole === 'admin') { // Potential issue
-  // Should check permissions, not role
+Expected Result:
+- Lockout after 5 failed attempts
+- Lockout duration: 15 minutes minimum
+- Email notification sent to account owner
+- CAPTCHA required after 3 attempts
+- Admin notification for repeated lockouts
+```
+
+**TC-AUTH-05: Password Reset Security**
+```
+Test Scenarios:
+1. Request password reset with valid email
+2. Verify reset link sent (check token entropy)
+3. Verify link expiration (max 1 hour)
+4. Verify one-time use only
+5. Test reset link reuse (should fail)
+6. Test account enumeration via reset form
+7. Verify old password invalidated after reset
+
+Expected Result: Secure reset process, no information disclosure
+```
+
+### 5.2 Authorization Testing Protocol
+
+**TC-AUTHZ-02: Role-Based Access Control**
+
+```
+User Roles:
+1. Client (Standard)
+2. Client (High Net Worth)
+3. Financial Advisor
+4. Compliance Officer
+5. System Administrator
+
+Test Matrix:
+
+| Action | Client | Client HNW | Advisor | Compliance | Admin |
+|--------|--------|------------|---------|------------|-------|
+| Submit own form | ✓ | ✓ | ✗ | ✗ | ✗ |
+| View own data | ✓ | ✓ | ✗ | ✗ | ✓ |
+| Edit own data | ✓ | ✓ | ✗ | ✗ | ✓ |
+| View client forms | ✗ | ✗ | ✓ (assigned) | ✓ (all) | ✓ |
+| Export data | ✗ | ✗ | ✓ (assigned) | ✓ (all) | ✓ |
+| Delete records | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Access audit logs | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Manage users | ✗ | ✗ | ✗ | ✗ | ✓ |
+
+Test Method: Attempt each action as each role, verify proper access control
+```
+
+**TC-AUTHZ-03: Horizontal Access Control**
+```
+Test Scenario:
+1. Login as Client A (ID: 1001)
+2. Access Client A's form: /api/client/1001/form
+3. Attempt to access Client B's form: /api/client/1002/form
+4. Attempt parameter manipulation: /api/client/1002/form?user=1001
+5. Test API endpoints with different client IDs
+
+Expected Result: Access denied for other clients' data
+```
+
+**TC-AUTHZ-04: Vertical Privilege Escalation**
+```
+Test Scenarios:
+1. Client attempts to access: /admin/dashboard
+2. Client attempts to call: POST /api/admin/delete-user
+3. Advisor attempts compliance-only functions
+4. Role modification via parameter tampering
+5. JWT token role claim manipulation (if applicable)
+
+Expected Result: All escalation attempts blocked, logged
+```
+
+### 5.3 Session Management Security
+
+**Session Configuration Requirements:**
+
+```json
+{
+  "session": {
+    "timeout_minutes": 15,
+    "absolute_timeout_minutes": 480,
+    "renewal_threshold_minutes": 5,
+    "cookie_config": {
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Strict",
+      "domain": ".wealthmanagement.co.uk",
+      "path": "/",
+      "maxAge": 900
+    },
+    "token_length_bytes": 32,
+    "concurrent_sessions_allowed": 1,
+    "ip_binding": true,
+    "user_agent_binding": true
+  }
 }
-
-Preferred Pattern:
-if (hasPermission(user, 'client.data.read', clientId)) {
-  // Granular permission check
-}
 ```
 
-#### 5.1.4 Cryptography
+**Test Case: SESS-02**
 ```
-REVIEW-007: Cryptographic Implementation
-Check for:
-✓ No custom crypto algorithms
-✓ Use of established libraries (NaCl, libsodium, crypto standards)
-✓ Appropriate algorithm selection:
-  - AES-256-GCM for encryption
-  - SHA-256 or SHA-3 for hashing
-  - RSA-2048+ or ECC for key exchange
-✓ Secure random number generation
-✓ Proper IV/nonce handling
-✓ No hardcoded keys or passwords
-
-RED FLAGS:
-❌ MD5 or SHA1 for security purposes
-❌ DES, 3DES, RC4
-❌ ECB mode
-❌ Hardcoded encryption keys
-❌ Random() instead of SecureRandom()
-```
-
-#### 5.1.5 Error Handling & Logging
-```
-REVIEW-008: Error Handling
-Check for:
-✓ Generic error messages to users
-✓ Detailed errors logged (not displayed)
-✓ No stack traces in production
-✓ No SQL error messages exposed
-✓ Try-catch blocks around critical operations
-✓ Proper exception handling
-
-REVIEW-009: Logging Implementation
-Check for:
-✓ Security events logged (see OWASP top 10 section)
-✓ No logging of sensitive data:
-  ❌ Passwords
-  ❌ Session tokens
-  ❌ Credit card numbers
-  ❌ National Insurance numbers
-  ❌ Bank account details
-✓ Structured logging format
-✓ Log integrity protection
-✓ Appropriate log levels
-```
-
-### 5.2 Technology-Specific Checks
-
-#### For React/Vue/Angular Frontend:
-```
-REVIEW-010: Frontend Security
-✓ No sensitive data in component state
-✓ Proper use of dangerouslySetInnerHTML (avoid if possible)
-✓ XSS protection via framework escaping
-✓ No eval() or Function() with user input
-✓ Dependency vulnerabilities checked (npm audit)
-✓ Source maps disabled in production
-```
-
-#### For Node.js/Express Backend:
-```
-REVIEW-011: Node.js Security
-✓ Helmet.js middleware configured
-✓ Express-validator for input validation
-✓ CORS properly configured
-✓ Rate limiting implemented
-✓ No use of vulnerable packages
-✓ Environment variables for secrets (.env)
-✓ PM2 or equivalent for production
-```
-
-#### For Python/Django/Flask Backend:
-```
-REVIEW-012: Python Security
-✓ Django middleware enabled (CSRF, clickjacking, XSS)
-✓ ORM usage (no raw SQL with user input)
-✓ Secret key security
-✓ Debug mode disabled in production
-✓ ALLOWED_HOSTS configured
-✓ Secure cookie settings
-```
-
-### 5.3 Third-Party Dependencies
-
-```
-REVIEW-013: Dependency Security
-Process:
-1. Generate complete dependency list
-2. Run vulnerability scanner
-3. Identify all HIGH/CRITICAL vulnerabilities
-4. Check for available patches
-5. Document remediation plan
-
-Commands:
-npm audit --production
-pip-audit
-bundle audit (Ruby)
-dotnet list package --vulnerable
-
-Required Actions:
-□ All CRITICAL vulnerabilities patched
-□ HIGH vulnerabilities remediated or documented risk acceptance
-□ Dependency update policy established
-□ Automated scanning in CI/CD pipeline
+Session Security Tests:
+1. Verify session expires after 15 minutes inactivity
+2. Verify absolute timeout after 8 hours
+3. Verify session renewed on activity (before timeout)
+4. Verify logout destroys server-side session
+5. Verify no session in URL parameters
+6. Verify session token randomness (entropy test)
+7. Verify new session on login (prevent fixation)
+8. Verify concurrent session handling (logout other sessions)
 ```
 
 ---
 
-## 6. Encryption & Data Protection Controls
+## 6. GDPR Compliance Verification
 
-### 6.1 Data Classification
+### 6.1 GDPR Principles Assessment
 
-**For UK Wealth Management Client Data:**
+#### Principle 1: Lawfulness, Fairness, and Transparency
 
-| Data Type | Classification | Encryption Requirement | Retention |
-|-----------|---------------|----------------------|-----------|
-| National Insurance Number | HIGHLY SENSITIVE | At rest + in transit | 6 years post-relationship |
-| Bank Account Details | HIGHLY SENSITIVE | At rest + in transit | 6 years post-relationship |
-| Income/Wealth Information | SENSITIVE | At rest + in transit | 6 years post-relationship |
-| Investment Details | SENSITIVE | At rest + in transit | 
+**Checklist:**
+- [ ] **Lawful Basis Documented**
+  - [ ] Contract (wealth management services)
+  - [ ] Consent (marketing communications)
+  - [ ] Legal obligation (FCA requirements)
+  - [ ] Legitimate interests (fraud prevention)
+  
+- [ ] **Transparency Requirements**
+  - [ ] Privacy Notice accessible before data collection
+  - [ ] Privacy Notice written in plain English
+  - [ ] Contact details for Data Protection Officer (DPO)
+  - [ ] Information about data transfers (if applicable)
+  - [ ] Retention periods specified
+  - [ ] Right to withdraw consent explained
+
+**Test Case: GDPR-TRANS-01**
+```
+Verification Steps:
+1. Access form without accepting privacy policy
+2. Verify privacy notice link present and functional
+3. Review privacy notice for GDPR completeness:
+   - Data controller identity
+   - Purpose of processing
+   - Legal basis for each purpose
+   - Recipients of data
+   - Retention period
+   - Data subject rights
+   - Right to lodge complaint with ICO
+   - Automated decision-making disclosure
+4. Verify understandable language (readability score)
+
+Expected Result: Complete, accessible privacy information
+```
+
+#### Principle 2: Purpose Limitation
+
+**Checklist:**
+- [ ] Data collection limited to specified purposes
+- [ ] No secondary use without consent
+- [ ] Purpose clearly stated in privacy notice
+- [ ] Form fields justified by purpose
+- [ ] Optional fields clearly marked
+
+**Test Case: GDPR-PURP-01**
+```
+Data Minimization Review:
+1. Review each form field
+2. Document business justification
+3. Identify fields that could be optional
+4. Remove unjustified mandatory fields
+
+Example Assessment:
+- Name: Required (contract, identification)
+- Email: Required (contract communication)
+- Phone: Required (FCA contact requirements)
+- Date of Birth: Required (age verification, suitability)
+- National Insurance: Required (tax reporting)
+- Marital Status: Required (fact-find)
+- Children: Required (estate planning)
+- Social Media: NOT REQUIRED (remove or make optional)
+```
+
+#### Principle 3: Data Minimization
+
+**Checklist:**
+- [ ] Only essential data collected
+- [ ] No "nice to have" fields required
+- [ ] Progressive disclosure in multi-step form
+- [ ] Conditional fields (only show when relevant)
+- [ ] Drop-downs instead of free text where possible
+
+#### Principle 4: Accuracy
+
+**Checklist:**
+- [ ] Email verification (double opt-in)
+- [ ] Phone verification (SMS code)
+- [ ] Address validation (postcode lookup API)
+- [ ] Update mechanism for clients to correct data
+- [ ] Regular data quality reviews scheduled
+- [ ] Duplicate detection
+
+**Test Case: GDPR-ACC-01**
+```
+Verification Tests:
+1. Submit form with incorrect email (typo)
+2. Verify email verification sent
+3. Test correction workflow
+4. Verify client can update own information
+5. Test data validation prevents incorrect formats
+
+Expected Result: Mechanisms ensure data accuracy
+```
+
+#### Principle 5: Storage Limitation
+
+**Checklist:**
+- [ ] **Retention Policy Documented**
+  - [ ] Active clients: Duration of relationship + 7 years (FCA requirement)
+  - [ ] Prospects (no contract): 2 years
+  - [ ] Marketing consent: Until withdrawn + 30 days
+  - [ ] Audit logs: 7 years
+  
+- [ ] **Automated Deletion Process**
+  - [ ] Scheduled job identifies expired data
+  - [ ] Review process before deletion
+  - [ ] Secure deletion (overwrite, not just marked deleted)
+  - [ ] Deletion log maintained
+
+**Test Case: GDPR-RET-01**
+```sql
+-- Retention Verification Query
+SELECT 
+  client_id,
+  created_date,
+  last_active_date,
+  status,
+  DATEDIFF(day, last_active_date, GETDATE()) as days_inactive,
+  CASE 
+    WHEN status = 'prospect' AND DATEDIFF(year, created_date, GETDATE()) > 2 
+      THEN 'DELETE'
+    WHEN status = 'closed' AND DATEDIFF(year, last_active_date, GETDATE()) > 7 
+      THEN 'DELETE'
+    ELSE 'RETAIN'
+  END as retention_action
+FROM clients
+WHERE status IN ('prospect', 'closed');
+
+-- Verify automated deletion process exists and runs
+```
+
+#### Principle 6: Integrity and Confidentiality
+
+**Checklist:**
+- [ ] Encryption in transit (TLS 1.2+)
+- [ ] Encryption at rest (AES-256)
+- [ ] Access controls (RBAC)
+- [ ] Audit logging
+- [ ] Regular security testing
+- [ ] Incident response plan
+- [ ] Data breach notification procedure (72-hour ICO notification)
+- [ ] Employee training on data protection
+
+### 6.2 Data Subject Rights Implementation
+
+#### Right of Access (Subject Access Request - SAR)
+
+**Requirements:**
+- [ ] Process to receive SAR (email, portal, postal)
+- [ ] Identity verification procedure
+- [ ] Response within 1 month (extendable to 3 months)
+- [ ] Free of charge (unless excessive/repetitive)
+- [ ] Provide copy of data in structured format
+- [ ] Include supplementary information (purposes, recipients, retention)
+
+**Test Case: GDPR-SAR-01**
+```
+SAR Testing Procedure:
+1. Submit SAR as test client
+2. Verify identity verification requested
+3. Verify response timeline tracked
+4. Verify data export includes:
+   - All personal data held
+   - Source of data
+   - Processing purposes
+   - Categories of recipients
+   - Retention period
+   - Right to rectification/erasure
+   - Right to lodge complaint
+5. Verify format is machine-readable (JSON/CSV)
+6. Verify no data omitted
+
+Expected Result: Complete data provided within 1 month
+```
+
+**SAR Response Template:**
+```json
+{
+  "data_subject": {
+    "name": "John Smith",
+    "email": "john.smith@example.com",
+    "verification_method": "Email link + security questions",
+    "request_date": "2024-01-15",
+    "response_date": "2024-02-10"
+  },
+  "personal_data": {
+    "identity": {
+      "name": "...",
+      "date_of_birth": "...",
+      "ni_number": "...",
+      "source": "Client form submission",
+      "purpose": "Contract performance",
+      "retention": "7 years after relationship ends"
+    },
+    "contact": {...},
+    "financial": {...},
+    "marketing_preferences": {...}
+  },
+  "processing_activities": [...],
+  "third_party_disclosures": [...],
+  "your_rights": {...}
+}
+```
+
+#### Right to Rectification
+
+**Requirements:**
+- [ ] Mechanism for clients to update own data
+- [ ] Process to request corrections
+- [ ] Response within 1 month
+- [ ] Third parties notified of corrections
+- [ ] Audit trail of changes
+
+**Test Case: GDPR-RECT-01**
+```
+Rectification Testing:
+1. Login to client portal
+2. Navigate to "My Information"
+3. Update email address
+4. Verify change saved
+5. Verify email to old and new addresses
+6. Verify audit log entry created
+7. Submit correction request (e.g., wrong DOB)
+8. Verify staff review process
+9. Verify correction applied
+10. Verify notification sent
+
+Expected Result: Corrections processed within 1 month
+```
+
+#### Right to Erasure ("Right to be Forgotten")
+
+**Requirements:**
+- [ ] Process to receive erasure requests
+- [ ] Evaluation criteria (legal obligations vs. right to erasure)
+- [ ] FCA retention requirements considered
+- [ ] Response within 1 month
+- [ ] Confirmation of erasure
+- [ ] Third parties notified
+- [ ] Suppression list to prevent re-contact
+
+**Exemptions to Erasure:**
+- Legal obligation to retain (FCA 7-year requirement)
+- Exercise/defense of legal claims
+- Public interest
+
+**Test Case: GDPR-ERAS-01**
+```
+Erasure Testing Scenarios:
+
+Scenario 1: Prospect (no contract, no FCA obligation)
+1. Submit erasure request
+2. Verify eligibility assessment
+3. Verify deletion within 1 month
+4. Verify confirmation sent
+5. Verify data actually deleted (not just flagged)
+6. Verify added to suppression list
+7. Attempt to re-access data (should fail)
+
+Expected Result: Data erased, cannot be recovered
+
+Scenario 2: Former client (FCA retention applies)
+1. Submit erasure request
+2. Verify eligibility assessment
+3. Verify refusal with legal basis explained
+4. Verify FCA retention schedule documented
+5. Verify deletion scheduled for end of retention period
+
+Expected Result: Erasure refused with clear explanation
+
+Scenario 3: Active client
+1. Submit erasure request
+2. Verify impact assessment (contract performance)
+3. Verify alternative options offered (data restriction)
+4. If proceeding: verify account closure process
+5. Verify 7-year retention for closed accounts
+
+Expected Result: Client informed of implications
+```
+
+**Deletion Verification:**
+```sql
+-- Test deletion completeness
+-- After erasure, these queries should return no results or anonymized data
+
+SELECT * FROM clients WHERE client_id = 'TEST123';
+SELECT * FROM client_documents WHERE client_id = 'TEST123';
+SELECT * FROM fact_find WHERE client_id = 'TEST123';
+SELECT * FROM audit_log WHERE client_id = 'TEST123'; -- May be retained
+SELECT * FROM backups WHERE client_id = 'TEST123'; -- Verify deletion from backups
+
+-- Verify suppression list entry
+SELECT * FROM suppression_list WHERE email = 'test@example.com';
+```
+
+#### Right to Data Portability
+
+**Requirements:**
+- [ ] Structured, commonly used, machine-readable format
+- [ ] Direct transmission to another controller (if technically feasible)
+- [ ] Response within 1 month
+- [ ] Free of charge
+
+**Test Case: GDPR-PORT-01**
+```
+Data Portability Testing:
+1. Submit data portability request
+2. Verify format options offered (JSON, CSV, XML)
+3. Verify export includes:
+   - All data provided by client
+   - Data generated by processing (e.g., risk profile)
+4. Verify schema documentation included
+5. Verify data completeness
+6. Verify file is machine-readable
+7. Test import into another system
+
+Expected Result: Complete data in portable format
+```
+
+**Data Export Format Example:**
+```json
+{
+  "export_metadata": {
+    "format_version": "1.0",
+    "export_date": "2024-01-15T10:30:00Z",
+    "data_controller": "XYZ Wealth Management Ltd",
+    "schema": "https://wealthmanagement.co.uk/schemas/client-data-v1.json"
+  },
+  "client_data": {
+    "personal_information":
