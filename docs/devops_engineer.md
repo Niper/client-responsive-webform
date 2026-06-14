@@ -1,270 +1,93 @@
-# Deployment and Release Management
+# Deployment Infrastructure and Documentation
 
 **Agent:** devops_engineer
 **Job:** Client Responsive Webform
 
 ---
 
-# Deployment and Release Management Plan
-## Client Responsive Webform - Production Deployment
+# Deployment Infrastructure and Documentation
+## Client Responsive Webform - DevOps Implementation
 
 ---
 
 ## Executive Summary
 
-This document provides a comprehensive deployment and release management plan for the Client Responsive Webform application. The plan encompasses CI/CD pipeline implementation, infrastructure provisioning, security controls, compliance measures, and operational procedures to ensure a secure, reliable production deployment for a UK wealth management firm.
+This document provides comprehensive infrastructure setup, deployment pipelines, monitoring solutions, and operational documentation for the Client Responsive Webform application serving UK wealth management firms under FCA compliance requirements.
 
 ---
 
-## 1. CI/CD Pipeline Implementation
+## Table of Contents
 
-### 1.1 Pipeline Architecture
-
-```yaml
-# .github/workflows/ci-cd-pipeline.yml
-name: Client Webform CI/CD Pipeline
-
-on:
-  push:
-    branches: [develop, staging, main]
-  pull_request:
-    branches: [develop, staging, main]
-
-env:
-  NODE_VERSION: '18.x'
-  TERRAFORM_VERSION: '1.6.0'
-
-jobs:
-  # Code Quality & Security Scanning
-  code-quality:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run linting
-        run: npm run lint
-      
-      - name: Run type checking
-        run: npm run type-check
-      
-      - name: Run unit tests
-        run: npm run test:unit -- --coverage
-      
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-
-  # Security Vulnerability Scanning
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
-      
-      - name: OWASP Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: 'client-webform'
-          path: '.'
-          format: 'HTML'
-      
-      - name: Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          severity: 'CRITICAL,HIGH'
-
-  # Build Application
-  build:
-    needs: [code-quality, security-scan]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build application
-        run: npm run build
-        env:
-          NODE_ENV: production
-      
-      - name: Create build artifact
-        run: tar -czf build-${{ github.sha }}.tar.gz dist/
-      
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-artifact
-          path: build-${{ github.sha }}.tar.gz
-          retention-days: 30
-
-  # Integration Tests
-  integration-tests:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Download build artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifact
-      
-      - name: Setup test environment
-        run: docker-compose -f docker-compose.test.yml up -d
-      
-      - name: Run integration tests
-        run: npm run test:integration
-      
-      - name: Run E2E tests
-        run: npm run test:e2e
-      
-      - name: Cleanup test environment
-        run: docker-compose -f docker-compose.test.yml down
-
-  # Deploy to Staging
-  deploy-staging:
-    if: github.ref == 'refs/heads/staging'
-    needs: integration-tests
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-      
-      - name: Download build artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifact
-      
-      - name: Deploy to S3
-        run: |
-          tar -xzf build-${{ github.sha }}.tar.gz
-          aws s3 sync dist/ s3://client-webform-staging --delete
-      
-      - name: Invalidate CloudFront cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.STAGING_CLOUDFRONT_ID }} \
-            --paths "/*"
-      
-      - name: Run smoke tests
-        run: npm run test:smoke -- --env=staging
-
-  # Deploy to Production
-  deploy-production:
-    if: github.ref == 'refs/heads/main'
-    needs: integration-tests
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
-      
-      - name: Download build artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifact
-      
-      - name: Create deployment snapshot
-        run: |
-          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          aws s3 sync s3://client-webform-production s3://client-webform-backups/$TIMESTAMP/
-      
-      - name: Deploy to S3
-        run: |
-          tar -xzf build-${{ github.sha }}.tar.gz
-          aws s3 sync dist/ s3://client-webform-production --delete
-      
-      - name: Invalidate CloudFront cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.PRODUCTION_CLOUDFRONT_ID }} \
-            --paths "/*"
-      
-      - name: Run smoke tests
-        run: npm run test:smoke -- --env=production
-      
-      - name: Notify deployment
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          text: 'Production deployment completed'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-```
-
-### 1.2 Branch Strategy
-
-```
-main (production)
-  ↑
-staging
-  ↑
-develop
-  ↑
-feature/* branches
-```
-
-**Branch Policies:**
-- `feature/*`: Development work, requires 1 approval
-- `develop`: Integration branch, requires 2 approvals + passing tests
-- `staging`: Pre-production testing, requires 2 approvals + security scan
-- `main`: Production, requires 3 approvals + all checks passing
+1. [Infrastructure Architecture](#1-infrastructure-architecture)
+2. [CI/CD Pipeline Configuration](#2-cicd-pipeline-configuration)
+3. [Security Implementation](#3-security-implementation)
+4. [Monitoring and Logging](#4-monitoring-and-logging)
+5. [Backup and Disaster Recovery](#5-backup-and-disaster-recovery)
+6. [Deployment Guide](#6-deployment-guide)
+7. [API Documentation](#7-api-documentation)
+8. [Database Schema Documentation](#8-database-schema-documentation)
+9. [Security Procedures](#9-security-procedures)
+10. [Incident Response Plan](#10-incident-response-plan)
+11. [Operational Runbooks](#11-operational-runbooks)
+12. [User Guide for Wealth Management Staff](#12-user-guide-for-wealth-management-staff)
 
 ---
 
-## 2. Infrastructure Configuration
+## 1. Infrastructure Architecture
 
-### 2.1 Terraform Infrastructure as Code
+### 1.1 Cloud Platform: AWS (Recommended)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Route 53                             │
+│                    (DNS Management)                          │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│                    CloudFront CDN                            │
+│              (DDoS Protection, SSL/TLS)                      │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│                  AWS WAF & Shield                            │
+│            (Application Layer Protection)                    │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│              Application Load Balancer                       │
+│                  (Multi-AZ, HTTPS)                          │
+└──────────┬────────────────────────┬────────────────────────┘
+           │                        │
+┌──────────▼──────────┐  ┌─────────▼──────────┐
+│   ECS Fargate       │  │   ECS Fargate      │
+│   (AZ-1)            │  │   (AZ-2)           │
+│   - Web App         │  │   - Web App        │
+│   - API Service     │  │   - API Service    │
+└──────────┬──────────┘  └─────────┬──────────┘
+           │                        │
+           └────────┬───────────────┘
+                    │
+┌───────────────────▼────────────────────────────────────────┐
+│                    VPC Private Subnet                       │
+│  ┌──────────────────┐        ┌──────────────────────┐     │
+│  │   RDS PostgreSQL │        │   ElastiCache Redis  │     │
+│  │   (Multi-AZ)     │        │   (Session Store)    │     │
+│  │   Encrypted      │        │                      │     │
+│  └──────────────────┘        └──────────────────────┘     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1.2 Infrastructure as Code (Terraform)
+
+**File: `infrastructure/terraform/main.tf`**
 
 ```hcl
-# terraform/main.tf
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = ">= 1.0"
   
   backend "s3" {
     bucket         = "client-webform-terraform-state"
-    key            = "production/terraform.tfstate"
+    key            = "prod/terraform.tfstate"
     region         = "eu-west-2"
     encrypt        = true
     dynamodb_table = "terraform-state-lock"
@@ -283,485 +106,789 @@ provider "aws" {
   
   default_tags {
     tags = {
+      Project     = "ClientWebform"
       Environment = var.environment
-      Project     = "client-webform"
-      ManagedBy   = "terraform"
+      ManagedBy   = "Terraform"
       Compliance  = "FCA"
-      DataClass   = "confidential"
+      DataClass   = "Sensitive"
     }
   }
 }
 
-# S3 Bucket for static hosting
-resource "aws_s3_bucket" "webform" {
-  bucket = "client-webform-${var.environment}"
+# VPC Configuration
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  version = "5.0.0"
+
+  name = "client-webform-vpc-${var.environment}"
+  cidr = "10.0.0.0/16"
+
+  azs              = ["eu-west-2a", "eu-west-2b", "eu-west-2c"]
+  private_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets   = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  database_subnets = ["10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"]
+
+  enable_nat_gateway   = true
+  enable_vpn_gateway   = false
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  enable_flow_log                      = true
+  create_flow_log_cloudwatch_iam_role  = true
+  create_flow_log_cloudwatch_log_group = true
 }
 
-resource "aws_s3_bucket_public_access_block" "webform" {
-  bucket = aws_s3_bucket.webform.id
-  
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
+# ECS Cluster
+resource "aws_ecs_cluster" "main" {
+  name = "client-webform-cluster-${var.environment}"
 
-resource "aws_s3_bucket_versioning" "webform" {
-  bucket = aws_s3_bucket.webform.id
-  
-  versioning_configuration {
-    status = "Enabled"
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
   }
-}
 
-resource "aws_s3_bucket_encryption" "webform" {
-  bucket = aws_s3_bucket.webform.id
-  
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-    bucket_key_enabled = true
-  }
-}
-
-resource "aws_s3_bucket_logging" "webform" {
-  bucket = aws_s3_bucket.webform.id
-  
-  target_bucket = aws_s3_bucket.logs.id
-  target_prefix = "s3-access-logs/"
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "webform" {
-  bucket = aws_s3_bucket.webform.id
-  
-  rule {
-    id     = "archive-old-versions"
-    status = "Enabled"
-    
-    noncurrent_version_transition {
-      noncurrent_days = 30
-      storage_class   = "STANDARD_IA"
-    }
-    
-    noncurrent_version_transition {
-      noncurrent_days = 90
-      storage_class   = "GLACIER"
-    }
-    
-    noncurrent_version_expiration {
-      noncurrent_days = 365
-    }
-  }
-}
-
-# CloudFront Distribution
-resource "aws_cloudfront_distribution" "webform" {
-  enabled             = true
-  is_ipv6_enabled     = true
-  comment             = "Client Webform ${var.environment}"
-  default_root_object = "index.html"
-  price_class         = "PriceClass_100"
-  
-  aliases = [var.domain_name]
-  
-  origin {
-    domain_name = aws_s3_bucket.webform.bucket_regional_domain_name
-    origin_id   = "S3-${aws_s3_bucket.webform.id}"
-    
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.webform.cloudfront_access_identity_path
-    }
-  }
-  
-  default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.webform.id}"
-    
-    forwarded_values {
-      query_string = false
+  configuration {
+    execute_command_configuration {
+      logging = "OVERRIDE"
       
-      cookies {
-        forward = "none"
+      log_configuration {
+        cloud_watch_log_group_name = aws_cloudwatch_log_group.ecs_exec.name
       }
     }
-    
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
-    compress               = true
-  }
-  
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
-  }
-  
-  custom_error_response {
-    error_code         = 403
-    response_code      = 200
-    response_page_path = "/index.html"
-  }
-  
-  restrictions {
-    geo_restriction {
-      restriction_type = "whitelist"
-      locations        = ["GB"]
-    }
-  }
-  
-  viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate.webform.arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
-  }
-  
-  logging_config {
-    bucket          = aws_s3_bucket.logs.bucket_domain_name
-    prefix          = "cloudfront-logs/"
-    include_cookies = false
-  }
-  
-  web_acl_id = aws_wafv2_web_acl.webform.arn
-}
-
-# ACM Certificate
-resource "aws_acm_certificate" "webform" {
-  provider          = aws.us-east-1
-  domain_name       = var.domain_name
-  validation_method = "DNS"
-  
-  subject_alternative_names = [
-    "www.${var.domain_name}"
-  ]
-  
-  lifecycle {
-    create_before_destroy = true
   }
 }
 
-# WAF Web ACL
-resource "aws_wafv2_web_acl" "webform" {
-  name  = "client-webform-${var.environment}"
-  scope = "CLOUDFRONT"
+# RDS PostgreSQL Database
+resource "aws_db_instance" "main" {
+  identifier     = "client-webform-db-${var.environment}"
+  engine         = "postgres"
+  engine_version = "15.4"
+  instance_class = var.db_instance_class
+
+  allocated_storage     = 100
+  max_allocated_storage = 500
+  storage_encrypted     = true
+  kms_key_id           = aws_kms_key.rds.arn
+
+  db_name  = "clientwebform"
+  username = "dbadmin"
+  password = random_password.db_password.result
+
+  multi_az               = true
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+
+  backup_retention_period = 30
+  backup_window          = "03:00-04:00"
+  maintenance_window     = "mon:04:00-mon:05:00"
+
+  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
   
+  deletion_protection = true
+  skip_final_snapshot = false
+  final_snapshot_identifier = "client-webform-final-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
+
+  performance_insights_enabled    = true
+  performance_insights_kms_key_id = aws_kms_key.rds.arn
+
+  tags = {
+    Name = "client-webform-database"
+  }
+}
+
+# Application Load Balancer
+resource "aws_lb" "main" {
+  name               = "client-webform-alb-${var.environment}"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = module.vpc.public_subnets
+
+  enable_deletion_protection = true
+  enable_http2              = true
+  enable_cross_zone_load_balancing = true
+
+  access_logs {
+    bucket  = aws_s3_bucket.alb_logs.id
+    prefix  = "alb"
+    enabled = true
+  }
+
+  drop_invalid_header_fields = true
+}
+
+# WAF Configuration
+resource "aws_wafv2_web_acl" "main" {
+  name  = "client-webform-waf-${var.environment}"
+  scope = "REGIONAL"
+
   default_action {
     allow {}
   }
-  
+
+  # Rate limiting rule
   rule {
     name     = "RateLimitRule"
     priority = 1
-    
+
     action {
       block {}
     }
-    
+
     statement {
       rate_based_statement {
         limit              = 2000
         aggregate_key_type = "IP"
       }
     }
-    
+
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "RateLimitRule"
-      sampled_requests_enabled   = true
+      metric_name               = "RateLimitRule"
+      sampled_requests_enabled  = true
     }
   }
-  
+
+  # AWS Managed Rules - Core Rule Set
   rule {
     name     = "AWSManagedRulesCommonRuleSet"
     priority = 2
-    
+
     override_action {
       none {}
     }
-    
+
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
       }
     }
-    
+
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "AWSManagedRulesCommonRuleSetMetric"
-      sampled_requests_enabled   = true
+      metric_name               = "AWSManagedRulesCommonRuleSetMetric"
+      sampled_requests_enabled  = true
     }
   }
-  
+
+  # SQL Injection Protection
   rule {
-    name     = "AWSManagedRulesKnownBadInputsRuleSet"
+    name     = "AWSManagedRulesSQLiRuleSet"
     priority = 3
-    
+
     override_action {
       none {}
     }
-    
+
     statement {
       managed_rule_group_statement {
-        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+        name        = "AWSManagedRulesSQLiRuleSet"
         vendor_name = "AWS"
       }
     }
-    
+
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "AWSManagedRulesKnownBadInputsRuleSetMetric"
-      sampled_requests_enabled   = true
+      metric_name               = "AWSManagedRulesSQLiRuleSetMetric"
+      sampled_requests_enabled  = true
     }
   }
-  
+
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "webform-waf"
-    sampled_requests_enabled   = true
+    metric_name               = "client-webform-waf"
+    sampled_requests_enabled  = true
   }
 }
 
-# API Gateway for backend
-resource "aws_api_gateway_rest_api" "webform_api" {
-  name        = "client-webform-api-${var.environment}"
-  description = "Client Webform API"
-  
-  endpoint_configuration {
-    types = ["REGIONAL"]
+# CloudFront Distribution
+resource "aws_cloudfront_distribution" "main" {
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "Client Webform Distribution"
+  default_root_object = "index.html"
+  price_class         = "PriceClass_100"
+  web_acl_id         = aws_wafv2_web_acl.cloudfront.arn
+
+  aliases = [var.domain_name]
+
+  origin {
+    domain_name = aws_lb.main.dns_name
+    origin_id   = "ALB"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  default_cache_behavior {
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "ALB"
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Host", "CloudFront-Forwarded-Proto"]
+
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
+    compress               = true
+  }
+
+  viewer_certificate {
+    acm_certificate_arn      = aws_acm_certificate.main.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "whitelist"
+      locations        = ["GB"]  # UK only access
+    }
+  }
+
+  logging_config {
+    include_cookies = true
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
+    prefix          = "cloudfront/"
   }
 }
 
-# CloudWatch Log Group
-resource "aws_cloudwatch_log_group" "api_gateway" {
-  name              = "/aws/apigateway/client-webform-${var.environment}"
-  retention_in_days = 90
-  kms_key_id        = aws_kms_key.logs.arn
-}
-
-# KMS Key for encryption
-resource "aws_kms_key" "logs" {
-  description             = "KMS key for log encryption"
+# KMS Keys for Encryption
+resource "aws_kms_key" "rds" {
+  description             = "KMS key for RDS encryption"
   deletion_window_in_days = 30
   enable_key_rotation     = true
-  
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "Enable IAM User Permissions"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-        }
-        Action   = "kms:*"
-        Resource = "*"
-      },
-      {
-        Sid    = "Allow CloudWatch Logs"
-        Effect = "Allow"
-        Principal = {
-          Service = "logs.${var.aws_region}.amazonaws.com"
-        }
-        Action = [
-          "kms:Encrypt",
-          "kms:Decrypt",
-          "kms:ReEncrypt*",
-          "kms:GenerateDataKey*",
-          "kms:CreateGrant",
-          "kms:DescribeKey"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
 
-# RDS Aurora for database
-resource "aws_rds_cluster" "webform_db" {
-  cluster_identifier      = "client-webform-${var.environment}"
-  engine                  = "aurora-postgresql"
-  engine_version          = "15.3"
-  database_name           = "clientwebform"
-  master_username         = "dbadmin"
-  master_password         = random_password.db_password.result
-  backup_retention_period = 30
-  preferred_backup_window = "03:00-04:00"
-  
-  storage_encrypted   = true
-  kms_key_id          = aws_kms_key.rds.arn
-  
-  enabled_cloudwatch_logs_exports = ["postgresql"]
-  
-  db_subnet_group_name   = aws_db_subnet_group.webform.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  
-  deletion_protection = true
-  skip_final_snapshot = false
-  final_snapshot_identifier = "client-webform-${var.environment}-final-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
-  
   tags = {
-    Backup = "required"
+    Name = "client-webform-rds-key"
   }
 }
 
-resource "aws_rds_cluster_instance" "webform_db" {
-  count              = 2
-  identifier         = "client-webform-${var.environment}-${count.index}"
-  cluster_identifier = aws_rds_cluster.webform_db.id
-  instance_class     = var.db_instance_class
-  engine             = aws_rds_cluster.webform_db.engine
-  engine_version     = aws_rds_cluster.webform_db.engine_version
-  
-  performance_insights_enabled = true
-  monitoring_interval          = 60
-  monitoring_role_arn          = aws_iam_role.rds_monitoring.arn
+resource "aws_kms_key" "s3" {
+  description             = "KMS key for S3 encryption"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+
+  tags = {
+    Name = "client-webform-s3-key"
+  }
 }
 
-# Secrets Manager for sensitive data
-resource "aws_secretsmanager_secret" "db_credentials" {
-  name = "client-webform/${var.environment}/db-credentials"
-  
-  recovery_window_in_days = 30
+# S3 Buckets for Backups and Logs
+resource "aws_s3_bucket" "backups" {
+  bucket = "client-webform-backups-${var.environment}"
 }
 
-resource "aws_secretsmanager_secret_version" "db_credentials" {
-  secret_id = aws_secretsmanager_secret.db_credentials.id
-  secret_string = jsonencode({
-    username = aws_rds_cluster.webform_db.master_username
-    password = random_password.db_password.result
-    host     = aws_rds_cluster.webform_db.endpoint
-    port     = aws_rds_cluster.webform_db.port
-    database = aws_rds_cluster.webform_db.database_name
-  })
+resource "aws_s3_bucket_versioning" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.s3.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+
+  rule {
+    id     = "backup-retention"
+    status = "Enabled"
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    transition {
+      days          = 90
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = 2555  # 7 years for FCA compliance
+    }
+  }
 }
 ```
 
-### 2.2 Network Configuration
+**File: `infrastructure/terraform/variables.tf`**
 
 ```hcl
-# terraform/network.tf
-resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-  
-  tags = {
-    Name = "client-webform-vpc-${var.environment}"
-  }
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "production"
 }
 
-resource "aws_subnet" "private" {
-  count             = 3
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.${count.index + 1}.0/24"
-  availability_zone = data.aws_availability_zones.available.names[count.index]
-  
-  tags = {
-    Name = "client-webform-private-${count.index + 1}"
-    Tier = "private"
-  }
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "eu-west-2"  # London region for UK compliance
 }
 
-resource "aws_subnet" "public" {
-  count             = 3
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.${count.index + 101}.0/24"
-  availability_zone = data.aws_availability_zones.available.names[count.index]
-  
-  map_public_ip_on_launch = true
-  
-  tags = {
-    Name = "client-webform-public-${count.index + 1}"
-    Tier = "public"
-  }
+variable "domain_name" {
+  description = "Domain name for the application"
+  type        = string
 }
 
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-  
-  tags = {
-    Name = "client-webform-igw"
-  }
+variable "db_instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t4g.large"
 }
 
-resource "aws_nat_gateway" "main" {
-  count         = 3
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
-  
-  tags = {
-    Name = "client-webform-nat-${count.index + 1}"
-  }
+variable "ecs_task_cpu" {
+  description = "CPU units for ECS task"
+  type        = number
+  default     = 1024
 }
 
-resource "aws_eip" "nat" {
-  count  = 3
-  domain = "vpc"
-  
-  tags = {
-    Name = "client-webform-nat-eip-${count.index + 1}"
-  }
+variable "ecs_task_memory" {
+  description = "Memory for ECS task"
+  type        = number
+  default     = 2048
 }
 
-# Security Groups
-resource "aws_security_group" "rds" {
-  name        = "client-webform-rds-${var.environment}"
-  description = "Security group for RDS database"
-  vpc_id      = aws_vpc.main.id
-  
-  ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lambda.id]
-    description     = "PostgreSQL from Lambda"
-  }
-  
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_security_group" "lambda" {
-  name        = "client-webform-lambda-${var.environment}"
-  description = "Security group for Lambda functions"
-  vpc_id      = aws_vpc.main.id
-  
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-# VPC Flow Logs
-resource "aws_flow_log" "main" {
-  iam_role_arn    = aws_iam_role.flow_logs.arn
-  log_destination = aws_cloudwatch_log_group.flow_logs.arn
-  traffic_type    = "ALL"
-  vpc_id          = aws_vpc.main.id
-}
-
-resource "aws_cloudwatch_log_group" "flow_logs" {
-  name              = "/aws/vpc/client-webform-${var.environment}"
-  retention_in_days = 90
-  kms_key_id        = aws_kms_key.logs.arn
+variable "app_count" {
+  description = "Number of application instances"
+  type        = number
+  default     = 2
 }
 ```
 
 ---
 
-## 3. Monitoring and Logging
+## 2. CI/CD Pipeline Configuration
 
-### 3.1 CloudWatch Dashboard Configuration
+### 2.1 GitHub Actions Workflow
+
+**File: `.github/workflows/deploy.yml`**
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: eu-west-2
+  ECR_REPOSITORY: client-webform
+  ECS_SERVICE: client-webform-service
+  ECS_CLUSTER: client-webform-cluster-production
+
+jobs:
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'client-webform'
+          path: '.'
+          format: 'HTML'
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: security-scan
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+
+      - name: Generate coverage report
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VCS_REF=${{ github.sha }} \
+            --build-arg VERSION=${{ github.sha }} \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: infrastructure/ecs/task-definition-staging.json
+          container-name: client-webform
+          image: ${{ needs.build.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: client-webform-service-staging
+          cluster: client-webform-cluster-staging
+          wait-for-service-stability: true
+
+      - name: Run smoke tests
+        run: |
+          npm run test:smoke -- --url=https://staging.clientwebform.example.com
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, deploy-staging]
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: infrastructure/ecs/task-definition-production.json
+          container-name: client-webform
+          image: ${{ needs.build.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Run smoke tests
+        run: |
+          npm run test:smoke -- --url=https://clientwebform.example.com
+
+      - name: Create deployment notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Production deployment completed'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        if: always()
+
+  rollback:
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: deploy-production
+    environment: production
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Rollback ECS service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --force-new-deployment \
+            --task-definition $(aws ecs describe-services \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --services ${{ env.ECS_SERVICE }} \
+              --query 'services[0].deployments[1].taskDefinition' \
+              --output text)
+```
+
+### 2.2 ECS Task Definition
+
+**File: `infrastructure/ecs/task-definition-production.json`**
+
+```json
+{
+  "family": "client-webform-production",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "client-webform",
+      "image": "ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/client-webform:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:ACCOUNT_ID:secret:client-webform/database-url"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:ACCOUNT_ID:secret:client-webform/jwt-secret"
+        },
+        {
+          "name": "ENCRYPTION_KEY",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:ACCOUNT_ID:secret:client-webform/encryption-key"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/client-webform-production",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 3. Security Implementation
+
+### 3.1 SSL/TLS Configuration
+
+**ACM Certificate Setup:**
+
+```bash
+# Request certificate via AWS CLI
+aws acm request-certificate \
+  --domain-name clientwebform.example.com \
+  --subject-alternative-names "*.clientwebform.example.com" \
+  --validation-method DNS \
+  --region eu-west-2
+
+# Certificate should be validated via DNS records
+# ACM will provide CNAME records to add to Route53
+```
+
+### 3.2 Security Headers Configuration
+
+**File: `infrastructure/nginx/security-headers.conf`**
+
+```nginx
+# Security Headers
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+add_header X-Frame-Options "DENY" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-XSS-Protection "1; mode=block" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none';" always;
+add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+
+# Remove server version
+server_tokens off;
+```
+
+### 3.3 Secrets Management
+
+**AWS Secrets Manager Configuration:**
+
+```bash
+# Create database credentials
+aws secretsmanager create-secret \
+  --name client-webform/database-url \
+  --description "Database connection string" \
+  --secret-string "postgresql://username:password@endpoint:5432/dbname" \
+  --region eu-west-2
+
+# Create JWT secret
+aws secretsmanager create-secret \
+  --name client-webform/jwt-secret \
+  --description "JWT signing secret" \
+  --secret-string "$(openssl rand -base64 64)" \
+  --region eu-west-2
+
+# Create encryption key
+aws secretsmanager create-secret \
+  --name client-webform/encryption-key \
+  --description "Data encryption key" \
+  --secret-string "$(openssl rand -base64 32)" \
+  --region eu-west-2
+
+# Enable automatic rotation (90 days)
+aws secretsmanager rotate-secret \
+  --secret-id client-webform/jwt-secret \
+  --rotation-lambda-arn arn:aws:lambda:eu-west-2:ACCOUNT_ID:function:SecretsManagerRotation \
+  --rotation-rules AutomaticallyAfterDays=90
+```
+
+---
+
+## 4. Monitoring and Logging
+
+### 4.1 CloudWatch Dashboard
+
+**File: `infrastructure/monitoring/cloudwatch-dashboard.json`**
 
 ```json
 {
@@ -770,194 +897,40 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
       "type": "metric",
       "properties": {
         "metrics": [
-          ["AWS/CloudFront", "Requests", { "stat": "Sum", "label": "Total Requests" }],
-          [".", "BytesDownloaded", { "stat": "Sum", "label": "Bytes Downloaded" }],
-          [".", "4xxErrorRate", { "stat": "Average", "label": "4xx Error Rate" }],
-          [".", "5xxErrorRate", { "stat": "Average", "label": "5xx Error Rate" }]
+          ["AWS/ECS", "CPUUtilization", {"stat": "Average"}],
+          [".", "MemoryUtilization", {"stat": "Average"}]
         ],
-        "view": "timeSeries",
-        "stacked": false,
-        "region": "us-east-1",
-        "title": "CloudFront Metrics",
-        "period": 300
+        "period": 300,
+        "stat": "Average",
+        "region": "eu-west-2",
+        "title": "ECS Resource Utilization",
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        }
       }
     },
     {
       "type": "metric",
       "properties": {
         "metrics": [
-          ["AWS/ApiGateway", "Count", { "stat": "Sum" }],
-          [".", "Latency", { "stat": "Average" }],
-          [".", "4XXError", { "stat": "Sum" }],
-          [".", "5XXError", { "stat": "Sum" }]
+          ["AWS/ApplicationELB", "TargetResponseTime", {"stat": "Average"}],
+          [".", "RequestCount", {"stat": "Sum"}],
+          [".", "HTTPCode_Target_4XX_Count", {"stat": "Sum"}],
+          [".", "HTTPCode_Target_5XX_Count", {"stat": "Sum"}]
         ],
-        "view": "timeSeries",
-        "stacked": false,
+        "period": 300,
+        "stat": "Average",
         "region": "eu-west-2",
-        "title": "API Gateway Metrics",
-        "period": 300
+        "title": "Application Load Balancer Metrics"
       }
     },
     {
       "type": "metric",
       "properties": {
         "metrics": [
-          ["AWS/RDS", "CPUUtilization", { "stat": "Average" }],
-          [".", "DatabaseConnections", { "stat": "Average" }],
-          [".", "ReadLatency", { "stat": "Average" }],
-          [".", "WriteLatency", { "stat": "Average" }]
-        ],
-        "view": "timeSeries",
-        "stacked": false,
-        "region": "eu-west-2",
-        "title": "RDS Performance",
-        "period": 300
-      }
-    },
-    {
-      "type": "log",
-      "properties": {
-        "query": "SOURCE '/aws/lambda/client-webform-submit'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 20",
-        "region": "eu-west-2",
-        "title": "Recent Errors",
-        "stacked": false
-      }
-    }
-  ]
-}
-```
-
-### 3.2 CloudWatch Alarms
-
-```hcl
-# terraform/monitoring.tf
-resource "aws_cloudwatch_metric_alarm" "high_error_rate" {
-  alarm_name          = "client-webform-high-error-rate-${var.environment}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "5XXError"
-  namespace           = "AWS/ApiGateway"
-  period              = "300"
-  statistic           = "Sum"
-  threshold           = "10"
-  alarm_description   = "This metric monitors API Gateway 5xx errors"
-  alarm_actions       = [aws_sns_topic.alerts.arn]
-  
-  dimensions = {
-    ApiName = aws_api_gateway_rest_api.webform_api.name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "high_latency" {
-  alarm_name          = "client-webform-high-latency-${var.environment}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "Latency"
-  namespace           = "AWS/ApiGateway"
-  period              = "300"
-  statistic           = "Average"
-  threshold           = "3000"
-  alarm_description   = "This metric monitors API Gateway latency"
-  alarm_actions       = [aws_sns_topic.alerts.arn]
-  
-  dimensions = {
-    ApiName = aws_api_gateway_rest_api.webform_api.name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "db_cpu_high" {
-  alarm_name          = "client-webform-db-cpu-high-${var.environment}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/RDS"
-  period              = "300"
-  statistic           = "Average"
-  threshold           = "80"
-  alarm_description   = "Database CPU utilization is too high"
-  alarm_actions       = [aws_sns_topic.alerts.arn]
-  
-  dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.webform_db.cluster_identifier
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "db_connections_high" {
-  alarm_name          = "client-webform-db-connections-high-${var.environment}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "DatabaseConnections"
-  namespace           = "AWS/RDS"
-  period              = "300"
-  statistic           = "Average"
-  threshold           = "80"
-  alarm_description   = "Database connection count is too high"
-  alarm_actions       = [aws_sns_topic.alerts.arn]
-  
-  dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.webform_db.cluster_identifier
-  }
-}
-
-resource "aws_sns_topic" "alerts" {
-  name              = "client-webform-alerts-${var.environment}"
-  kms_master_key_id = aws_kms_key.sns.id
-}
-
-resource "aws_sns_topic_subscription" "alerts_email" {
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "email"
-  endpoint  = var.alert_email
-}
-
-resource "aws_sns_topic_subscription" "alerts_slack" {
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "https"
-  endpoint  = var.slack_webhook_url
-}
-```
-
-### 3.3 Application Logging Configuration
-
-```typescript
-// src/utils/logger.ts
-import { CloudWatchLogsClient, PutLogEventsCommand } from '@aws-sdk/client-cloudwatch-logs';
-
-export enum LogLevel {
-  DEBUG = 'DEBUG',
-  INFO = 'INFO',
-  WARN = 'WARN',
-  ERROR = 'ERROR',
-  CRITICAL = 'CRITICAL'
-}
-
-interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  message: string;
-  context?: Record<string, any>;
-  userId?: string;
-  sessionId?: string;
-  requestId?: string;
-  environment: string;
-}
-
-class Logger {
-  private cloudWatchClient: CloudWatchLogsClient;
-  private logGroupName: string;
-  private logStreamName: string;
-  private buffer: LogEntry[] = [];
-  private flushInterval: NodeJS.Timeout;
-
-  constructor() {
-    this.cloudWatchClient = new CloudWatchLogsClient({ region: process.env.AWS_REGION });
-    this.logGroupName = process.env.LOG_GROUP_NAME || '/aws/client-webform';
-    this.logStreamName = `${process.env.ENVIRONMENT}-${Date.now()}`;
-    
-    // Flush logs every 5 seconds
-    this.flushInterval = setInterval(() => this.flush(), 5000);
-  }
-
-  private createLogEntry(level: LogLevel, message: string, context?: Record<string, any>): LogEntry {
-    return {
-      timestamp: new Date().to
+          ["AWS/RDS", "DatabaseConnections", {"stat": "Average"}],
+          [".", "CPUUtilization", {"stat": "Average"}],
+          [".", "FreeableMemory", {"stat

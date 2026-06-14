@@ -7,73 +7,65 @@
 
 ```json
 {
-  "analysis": "This project requires building a regulated, multi-step responsive web form for UK wealth management client onboarding. The key considerations are: (1) FCA compliance requirements for data collection and storage, (2) multi-step form UX design for complex information gathering, (3) secure data handling given the sensitive financial nature, (4) UK-specific validation (postcodes, phone formats, regulatory fields), and (5) responsive design for accessibility across devices. The work spans regulatory analysis, UX design, full-stack development, security implementation, and compliance validation.",
+  "analysis": "This project requires building a regulated, multi-step web form for UK wealth management client onboarding with FCA compliance requirements. Key considerations include: data protection (UK GDPR), secure data handling, comprehensive fact-finding capabilities, responsive design for cross-device accessibility, and proper validation. The multi-step nature suggests a wizard-style interface to reduce cognitive load. FCA compliance necessitates specific data capture requirements including suitability assessment data, risk profiling, and proper consent management. The solution requires careful business analysis for regulatory requirements, robust security measures, professional UI/UX design, full-stack development, and thorough testing for compliance and functionality.",
   "tasks": [
     {
-      "title": "FCA Compliance and Regulatory Requirements Analysis",
-      "description": "Conduct comprehensive analysis of FCA regulations for client onboarding in wealth management. Identify mandatory data fields, consent requirements, data retention policies, right-to-be-forgotten provisions, and GDPR compliance measures. Document specific requirements for fact-find questionnaires, suitability assessments, and client classification. Deliverable: Compliance requirements document with mandatory fields, validation rules, consent text, and regulatory constraints.",
-      "assigned_agent": "legal_compliance_analyst",
+      "title": "Define FCA Compliance Requirements and Data Specification",
+      "description": "Conduct detailed analysis of FCA regulatory requirements for client onboarding in wealth management. Define comprehensive data schema including: personal details (name, DOB, address, contact info), financial information (income, assets, liabilities), investment objectives, risk tolerance, fact-find questions, anti-money laundering (AML) requirements, and consent management. Document mandatory vs optional fields, validation rules, data retention policies, and GDPR compliance requirements. Deliverable: Requirements specification document with complete field definitions, regulatory mappings, and validation criteria.",
+      "assigned_agent": "business_analyst",
+      "depends_on": [],
+      "priority": "HIGH",
+      "estimated_effort": "3-4 days"
+    },
+    {
+      "title": "Security and Data Protection Architecture",
+      "description": "Design security architecture for handling sensitive financial and personal data. Define encryption standards (at rest and in transit), secure data storage approach, access controls, audit logging requirements, UK GDPR compliance measures including right to erasure and data portability. Specify authentication mechanisms, session management, CSRF protection, and secure API design. Address PCI-DSS requirements if payment data is involved. Deliverable: Security architecture document with technical specifications and compliance checklist.",
+      "assigned_agent": "security_analyst",
       "depends_on": [],
       "priority": "HIGH",
       "estimated_effort": "2-3 days"
     },
     {
-      "title": "Multi-step Form UX Design and User Flow",
-      "description": "Design the multi-step form user experience including step progression, navigation patterns, progress indicators, and error handling. Create wireframes for all form steps covering: (1) Personal details, (2) Contact information, (3) Address capture with UK postcode lookup, (4) Financial fact-find questions, (5) Risk assessment, (6) Consent and declarations. Ensure mobile-first responsive design. Include validation feedback patterns and save/resume functionality design. Deliverable: Complete wireframe set with user flow diagrams and interaction specifications.",
+      "title": "Design Multi-Step Form UI/UX and Wireframes",
+      "description": "Create responsive UI/UX design for multi-step wizard interface optimized for desktop, tablet, and mobile devices. Design progressive form flow with logical grouping: Step 1 (Personal Details), Step 2 (Contact & Address), Step 3 (Financial Information), Step 4 (Investment Objectives & Risk Profile), Step 5 (Fact Find), Step 6 (Consents & Review). Include progress indicators, validation feedback, error handling, auto-save functionality, and accessible design patterns (WCAG 2.1 AA compliance). Deliverable: Complete wireframes, user flow diagrams, and responsive design specifications.",
       "assigned_agent": "ui_designer",
-      "depends_on": ["FCA Compliance and Regulatory Requirements Analysis"],
+      "depends_on": ["task_1"],
       "priority": "HIGH",
-      "estimated_effort": "3-4 days"
-    },
-    {
-      "title": "Data Architecture and Security Design",
-      "description": "Design secure data model for client information storage including encryption strategy for PII and sensitive financial data. Define database schema with appropriate field types, validation constraints, and audit trail requirements. Plan data encryption at rest and in transit. Design secure API contracts for form submission. Include GDPR-compliant data retention and deletion mechanisms. Address UK postcode validation and address lookup integration requirements. Deliverable: Data model documentation, API specifications, and security architecture document.",
-      "assigned_agent": "data_architect",
-      "depends_on": ["FCA Compliance and Regulatory Requirements Analysis"],
-      "priority": "HIGH",
-      "estimated_effort": "3-4 days"
-    },
-    {
-      "title": "Backend API and Data Processing Development",
-      "description": "Develop secure backend API endpoints for form data submission, validation, and storage. Implement: (1) Multi-step form data persistence with save/resume capability, (2) Server-side validation for all inputs including UK-specific formats (postcodes, phone numbers, NI numbers), (3) Data encryption and secure storage, (4) Audit logging for compliance, (5) Integration with UK postcode lookup service (e.g., Royal Mail PAF), (6) Email notification system for form completion. Implement rate limiting and CSRF protection. Deliverable: Production-ready backend API with comprehensive validation and security measures.",
-      "assigned_agent": "backend_dev",
-      "depends_on": ["Data Architecture and Security Design"],
-      "priority": "HIGH",
-      "estimated_effort": "5-7 days"
-    },
-    {
-      "title": "Responsive Frontend Form Implementation",
-      "description": "Develop responsive, accessible multi-step form interface based on approved designs. Implement: (1) Progressive form steps with validation, (2) Mobile-first responsive layout, (3) Real-time client-side validation with user-friendly error messages, (4) UK postcode lookup integration, (5) Progress saving and resume functionality, (6) Accessibility compliance (WCAG 2.1 AA), (7) Form state management, (8) Loading states and error handling. Use modern framework (React/Vue) with form validation library. Ensure cross-browser compatibility. Deliverable: Fully functional, responsive frontend application with comprehensive form handling.",
-      "assigned_agent": "frontend_dev",
-      "depends_on": ["Multi-step Form UX Design and User Flow", "Backend API and Data Processing Development"],
-      "priority": "HIGH",
-      "estimated_effort": "6-8 days"
-    },
-    {
-      "title": "Security Testing and Compliance Validation",
-      "description": "Conduct comprehensive security testing including: (1) Penetration testing for common vulnerabilities (SQL injection, XSS, CSRF), (2) Data encryption verification, (3) Authentication and authorization testing, (4) GDPR compliance verification (data access, deletion, portability), (5) FCA regulatory requirement validation against checklist, (6) Privacy policy and consent mechanism verification. Test UK-specific validation rules. Deliverable: Security test report with findings, compliance checklist confirmation, and remediation recommendations.",
-      "assigned_agent": "security_analyst",
-      "depends_on": ["Backend API and Data Processing Development", "Responsive Frontend Form Implementation"],
-      "priority": "HIGH",
-      "estimated_effort": "3-4 days"
-    },
-    {
-      "title": "End-to-End Testing and UAT Preparation",
-      "description": "Develop and execute comprehensive test plan covering: (1) Functional testing of all form steps and validation rules, (2) Responsive design testing across devices and browsers, (3) Integration testing for postcode lookup and email notifications, (4) Form state persistence and resume testing, (5) Accessibility testing with screen readers, (6) Performance testing under load, (7) UAT test case preparation for business stakeholders. Document all test cases and results. Deliverable: Test execution report, UAT documentation, and defect log with resolutions.",
-      "assigned_agent": "tester",
-      "depends_on": ["Responsive Frontend Form Implementation"],
-      "priority": "MEDIUM",
       "estimated_effort": "4-5 days"
     },
     {
-      "title": "Documentation and Deployment Package",
-      "description": "Create comprehensive documentation including: (1) User guide for form completion, (2) Administrator guide for accessing submitted data, (3) Technical documentation for API endpoints and data model, (4) Compliance documentation mapping FCA requirements to implementation, (5) Deployment guide with environment configuration, (6) Security and data handling procedures, (7) Incident response procedures for data breaches. Prepare production deployment checklist and rollback plan. Deliverable: Complete documentation suite and deployment package ready for production release.",
-      "assigned_agent": "documentation_writer",
-      "depends_on": ["End-to-End Testing and UAT Preparation", "Security Testing and Compliance Validation"],
+      "title": "Develop Full-Stack Web Form Application",
+      "description": "Build complete multi-step form application with frontend and backend components. Frontend: Implement responsive React/Vue.js form with step navigation, real-time validation, conditional logic, auto-save to prevent data loss, and accessible components. Backend: Create RESTful API endpoints for form submission, data validation, temporary storage during completion, and final submission. Implement server-side validation matching frontend rules, UK postcode validation, email/phone verification, and secure data handling per security specifications. Include integration points for CRM/database storage. Deliverable: Fully functional web form application with documented API.",
+      "assigned_agent": "full_stack_dev",
+      "depends_on": ["task_2", "task_3"],
+      "priority": "HIGH",
+      "estimated_effort": "8-10 days"
+    },
+    {
+      "title": "Design Data Storage and Integration Architecture",
+      "description": "Design database schema for storing client information with proper normalization, indexing, and encryption. Define data pipeline for integrating submitted forms with existing CRM/wealth management systems. Specify API contracts for downstream systems, data transformation requirements, and backup/recovery procedures. Address data archival and retention policies per FCA requirements. Deliverable: Database schema, ERD diagrams, integration architecture document, and migration scripts.",
+      "assigned_agent": "data_architect",
+      "depends_on": ["task_1"],
+      "priority": "MEDIUM",
+      "estimated_effort": "3-4 days"
+    },
+    {
+      "title": "Comprehensive Testing and Compliance Validation",
+      "description": "Execute complete testing strategy including: functional testing of all form steps and validation rules, cross-browser/device responsive testing, accessibility testing (WCAG 2.1 AA), security testing (OWASP Top 10), data validation testing, error handling scenarios, session timeout handling, and compliance verification against FCA requirements. Perform UAT with wealth management stakeholders. Document test cases, results, and compliance evidence. Deliverable: Test plan, test cases, test results report, and compliance certification document.",
+      "assigned_agent": "tester",
+      "depends_on": ["task_4"],
+      "priority": "HIGH",
+      "estimated_effort": "5-6 days"
+    },
+    {
+      "title": "Deployment Infrastructure and Documentation",
+      "description": "Set up production-ready infrastructure with SSL certificates, DDoS protection, automated backups, and monitoring. Configure CI/CD pipeline for deployment. Implement logging and monitoring for form submissions, errors, and security events. Create comprehensive technical documentation including: deployment guide, API documentation, database schema documentation, security procedures, incident response plan, and user guide for wealth management staff. Deliverable: Deployed application, infrastructure documentation, and operational runbooks.",
+      "assigned_agent": "devops_engineer",
+      "depends_on": ["task_6"],
       "priority": "MEDIUM",
       "estimated_effort": "3-4 days"
     }
   ],
-  "recommendations": "1. Engage with FCA compliance early and consider consulting with a financial services regulatory expert. 2. Implement progressive enhancement to ensure form works even with JavaScript disabled for maximum accessibility. 3. Consider implementing electronic signature capability if required for regulatory declarations. 4. Plan for regular compliance audits and updates as FCA regulations evolve. 5. Implement comprehensive analytics to identify drop-off points in the multi-step form. 6. Consider adding live chat support within the form for user assistance. 7. Plan for integration with existing CRM or wealth management systems for seamless data flow. 8. Budget for ongoing maintenance including security patches and regulatory updates."
+  "recommendations": "1. Engage with FCA compliance specialists early to ensure all regulatory requirements are captured. 2. Consider implementing progressive profiling to reduce form abandonment while maintaining comprehensive data collection. 3. Build in analytics to track completion rates per step and identify drop-off points. 4. Plan for regular compliance audits and updates as FCA regulations evolve. 5. Consider integration with identity verification services (e.g., credit reference agencies) for enhanced KYC compliance. 6. Implement comprehensive audit trails for all data access and modifications. 7. Consider WCAG accessibility from the start rather than retrofitting. 8. Plan for user training sessions with wealth management staff before go-live."
 }
 ```

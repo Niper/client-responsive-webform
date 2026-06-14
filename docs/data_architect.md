@@ -1,777 +1,707 @@
-# Data Architecture and Security Design
+# Design Data Storage and Integration Architecture
 
 **Agent:** data_architect
 **Job:** Client Responsive Webform
 
 ---
 
-# Data Architecture and Security Design Document
-## Client Responsive Webform - UK Wealth Management Firm
+# Client Responsive Webform - Data Storage and Integration Architecture
 
-**Version:** 1.0  
-**Date:** 2024  
-**Classification:** CONFIDENTIAL
-
----
-
-## Table of Contents
-
-1. [Executive Summary](#1-executive-summary)
-2. [Data Model Design](#2-data-model-design)
-3. [Database Schema Specification](#3-database-schema-specification)
-4. [Security Architecture](#4-security-architecture)
-5. [API Specifications](#5-api-specifications)
-6. [GDPR Compliance Framework](#6-gdpr-compliance-framework)
-7. [UK-Specific Requirements](#7-uk-specific-requirements)
-8. [Data Quality and Validation](#8-data-quality-and-validation)
-9. [Infrastructure and Deployment](#9-infrastructure-and-deployment)
-10. [Appendices](#10-appendices)
+## Document Version Control
+- **Version:** 1.0
+- **Date:** 2024
+- **Classification:** Confidential
+- **Compliance Framework:** FCA SYSC 3.2, GDPR, UK Data Protection Act 2018
 
 ---
 
-## 1. Executive Summary
+## Executive Summary
 
-This document outlines the comprehensive data architecture for a client onboarding webform tailored for UK wealth management firms. The design prioritizes FCA compliance, GDPR adherence, and robust security measures while maintaining scalability and performance.
-
-### Key Design Principles
-
-- **Security-First**: Multi-layer encryption, field-level security for PII
-- **Compliance-Ready**: FCA and GDPR requirements embedded in architecture
-- **Audit-Complete**: Full audit trail for regulatory reporting
-- **Scalable**: Designed to handle 100,000+ clients with sub-second response times
-- **Privacy-Preserving**: Data minimization and purpose limitation built-in
+This document outlines the comprehensive data architecture for the Client Responsive Webform system for a UK wealth management firm. The architecture ensures FCA compliance, data security, scalability, and seamless integration with existing wealth management systems while maintaining data integrity and supporting regulatory reporting requirements.
 
 ---
 
-## 2. Data Model Design
+## 1. Database Schema Design
 
-### 2.1 Entity Relationship Diagram
+### 1.1 Logical Data Model
 
-```
-┌─────────────────────┐
-│   Client            │
-├─────────────────────┤
-│ PK client_id        │
-│    client_uuid      │
-│    onboarding_stage │
-│    created_at       │
-│    updated_at       │
-└──────────┬──────────┘
-           │
-           │ 1:1
-           │
-┌──────────┴──────────────────────┐
-│   PersonalDetails               │
-├─────────────────────────────────┤
-│ PK personal_details_id          │
-│ FK client_id                    │
-│    title                        │
-│    first_name (encrypted)       │
-│    middle_names (encrypted)     │
-│    surname (encrypted)          │
-│    preferred_name               │
-│    date_of_birth (encrypted)    │
-│    national_insurance (encrypted)│
-│    nationality                  │
-│    marital_status               │
-│    number_of_dependents         │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   ContactInformation            │
-├─────────────────────────────────┤
-│ PK contact_id                   │
-│ FK client_id                    │
-│    email_primary (encrypted)    │
-│    email_secondary (encrypted)  │
-│    phone_mobile (encrypted)     │
-│    phone_home (encrypted)       │
-│    phone_work (encrypted)       │
-│    preferred_contact_method     │
-│    preferred_contact_time       │
-│    marketing_consent            │
-│    marketing_consent_date       │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   Address                       │
-├─────────────────────────────────┤
-│ PK address_id                   │
-│ FK client_id                    │
-│    address_type                 │
-│    building_name                │
-│    building_number              │
-│    street_name (encrypted)      │
-│    locality                     │
-│    town_city (encrypted)        │
-│    county                       │
-│    postcode (encrypted)         │
-│    country                      │
-│    uprn                         │
-│    from_date                    │
-│    to_date                      │
-│    is_current                   │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   EmploymentDetails             │
-├─────────────────────────────────┤
-│ PK employment_id                │
-│ FK client_id                    │
-│    employment_status            │
-│    employer_name (encrypted)    │
-│    job_title                    │
-│    industry_sector              │
-│    annual_income (encrypted)    │
-│    employment_start_date        │
-│    employment_end_date          │
-│    is_current                   │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   FinancialProfile              │
-├─────────────────────────────────┤
-│ PK financial_profile_id         │
-│ FK client_id                    │
-│    estimated_net_worth (encrypted)│
-│    liquid_assets (encrypted)    │
-│    annual_income (encrypted)    │
-│    monthly_expenditure (encrypted)│
-│    source_of_wealth             │
-│    source_of_funds              │
-│    tax_residency                │
-│    tax_identification (encrypted)│
-│    politically_exposed          │
-│    pep_details                  │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   FactFind                      │
-├─────────────────────────────────┤
-│ PK fact_find_id                 │
-│ FK client_id                    │
-│    investment_objectives        │
-│    risk_tolerance               │
-│    investment_horizon           │
-│    investment_experience        │
-│    capacity_for_loss            │
-│    ethical_preferences          │
-│    existing_investments         │
-│    pension_details              │
-│    protection_needs             │
-│    estate_planning_needs        │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   ConsentManagement             │
-├─────────────────────────────────┤
-│ PK consent_id                   │
-│ FK client_id                    │
-│    consent_type                 │
-│    consent_given                │
-│    consent_date                 │
-│    consent_version              │
-│    consent_withdrawn_date       │
-│    purpose                      │
-│    legal_basis                  │
-│    ip_address                   │
-│    user_agent                   │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   DocumentMetadata              │
-├─────────────────────────────────┤
-│ PK document_id                  │
-│ FK client_id                    │
-│    document_type                │
-│    document_name                │
-│    storage_path (encrypted)     │
-│    mime_type                    │
-│    file_size                    │
-│    checksum                     │
-│    encryption_key_id            │
-│    uploaded_at                  │
-│    verified_at                  │
-│    expiry_date                  │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   AuditLog                      │
-├─────────────────────────────────┤
-│ PK audit_id                     │
-│ FK client_id                    │
-│    table_name                   │
-│    record_id                    │
-│    action_type                  │
-│    field_name                   │
-│    old_value_hash               │
-│    new_value_hash               │
-│    changed_by                   │
-│    changed_at                   │
-│    ip_address                   │
-│    user_agent                   │
-│    session_id                   │
-│    reason                       │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   DataRetentionLog              │
-├─────────────────────────────────┤
-│ PK retention_id                 │
-│ FK client_id                    │
-│    data_category                │
-│    retention_period_months      │
-│    legal_basis                  │
-│    retention_start_date         │
-│    scheduled_deletion_date      │
-│    deletion_executed_date       │
-│    deletion_method              │
-│    verification_hash            │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│   EncryptionKeyManagement       │
-├─────────────────────────────────┤
-│ PK key_id                       │
-│    key_version                  │
-│    algorithm                    │
-│    key_encrypted_key            │
-│    created_at                   │
-│    rotated_at                   │
-│    expires_at                   │
-│    status                       │
-│    key_purpose                  │
-└─────────────────────────────────┘
-```
-
-### 2.2 Data Model Rationale
-
-**Normalization Strategy**: 3NF (Third Normal Form) with selective denormalization for read performance
-
-**Key Design Decisions**:
-
-1. **Separate Entities**: Personal, contact, and financial data separated for:
-   - Granular access control
-   - Different encryption strategies
-   - Independent retention policies
-
-2. **Address History**: Multi-address support with temporal tracking for AML compliance
-
-3. **Consent Management**: Separate entity for GDPR Article 7 compliance and audit
-
-4. **Audit Log**: Immutable append-only structure for complete traceability
-
----
-
-## 3. Database Schema Specification
-
-### 3.1 PostgreSQL Schema Definition
+#### Core Entities
 
 ```sql
--- Enable required extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm"; -- For fuzzy text search
+-- ============================================================================
+-- SCHEMA: client_onboarding
+-- PURPOSE: Secure storage of client data with audit trail and compliance
+-- ============================================================================
 
--- Create custom types
-CREATE TYPE onboarding_stage_enum AS ENUM (
-    'not_started', 'personal_details', 'contact_info', 'address', 
-    'employment', 'financial_profile', 'fact_find', 'documents', 
-    'review', 'submitted', 'approved', 'rejected'
-);
-
-CREATE TYPE address_type_enum AS ENUM (
-    'residential', 'correspondence', 'previous', 'business'
-);
-
-CREATE TYPE employment_status_enum AS ENUM (
-    'employed', 'self_employed', 'retired', 'unemployed', 
-    'student', 'homemaker', 'other'
-);
-
-CREATE TYPE consent_type_enum AS ENUM (
-    'data_processing', 'marketing', 'third_party_sharing', 
-    'profiling', 'automated_decisions', 'terms_and_conditions'
-);
-
-CREATE TYPE audit_action_enum AS ENUM (
-    'INSERT', 'UPDATE', 'DELETE', 'SELECT', 'EXPORT', 'PRINT'
-);
-
--- Main Client Table
-CREATE TABLE clients (
-    client_id BIGSERIAL PRIMARY KEY,
-    client_uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
-    onboarding_stage onboarding_stage_enum DEFAULT 'not_started' NOT NULL,
-    relationship_manager_id BIGINT,
-    application_source VARCHAR(100), -- 'web_form', 'mobile_app', 'advisor_portal'
-    is_active BOOLEAN DEFAULT true,
-    is_deleted BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT chk_deleted_at CHECK (is_deleted = false OR deleted_at IS NOT NULL)
-);
-
-CREATE INDEX idx_clients_uuid ON clients(client_uuid);
-CREATE INDEX idx_clients_stage ON clients(onboarding_stage) WHERE is_active = true;
-CREATE INDEX idx_clients_created ON clients(created_at);
-
--- Personal Details Table (Encrypted Fields)
-CREATE TABLE personal_details (
-    personal_details_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    title VARCHAR(20),
-    first_name_encrypted BYTEA NOT NULL,
-    first_name_hash VARCHAR(64) NOT NULL, -- For searching without decryption
-    middle_names_encrypted BYTEA,
-    surname_encrypted BYTEA NOT NULL,
-    surname_hash VARCHAR(64) NOT NULL,
+-- 1. CLIENT_PROFILE (Core Identity)
+CREATE TABLE client_profile (
+    client_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_reference VARCHAR(20) UNIQUE NOT NULL, -- Business-friendly ID
+    title VARCHAR(10),
+    first_name VARCHAR(100) NOT NULL,
+    middle_names VARCHAR(200),
+    surname VARCHAR(100) NOT NULL,
     preferred_name VARCHAR(100),
-    date_of_birth_encrypted BYTEA NOT NULL,
-    dob_hash VARCHAR(64) NOT NULL,
-    age_band VARCHAR(20), -- For analytics without exposing DOB
-    national_insurance_encrypted BYTEA,
-    ni_hash VARCHAR(64),
-    nationality VARCHAR(100),
-    country_of_birth VARCHAR(100),
-    marital_status VARCHAR(50),
-    number_of_dependents SMALLINT,
-    gender VARCHAR(50), -- Optional, for analytics only if provided
-    encryption_key_id BIGINT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(client_id)
+    date_of_birth DATE NOT NULL,
+    place_of_birth VARCHAR(100),
+    nationality VARCHAR(3), -- ISO 3166-1 alpha-3
+    national_insurance_number VARCHAR(9), -- Encrypted
+    marital_status VARCHAR(20),
+    number_of_dependents INTEGER,
+    
+    -- Compliance & Risk
+    pep_status BOOLEAN DEFAULT FALSE, -- Politically Exposed Person
+    pep_details TEXT, -- Encrypted if TRUE
+    sanctions_screening_status VARCHAR(20) DEFAULT 'PENDING',
+    sanctions_screening_date TIMESTAMP,
+    risk_rating VARCHAR(20), -- LOW, MEDIUM, HIGH
+    
+    -- Metadata
+    onboarding_status VARCHAR(30) DEFAULT 'DRAFT', 
+    -- DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, ACTIVE
+    form_submission_date TIMESTAMP,
+    approval_date TIMESTAMP,
+    approved_by UUID REFERENCES system_users(user_id),
+    
+    -- Technical
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES system_users(user_id),
+    updated_by UUID REFERENCES system_users(user_id),
+    version INTEGER DEFAULT 1,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    
+    -- Constraints
+    CONSTRAINT chk_dob_valid CHECK (date_of_birth <= CURRENT_DATE - INTERVAL '18 years'),
+    CONSTRAINT chk_status_valid CHECK (onboarding_status IN 
+        ('DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'ACTIVE'))
 );
 
-CREATE INDEX idx_personal_first_name_hash ON personal_details(first_name_hash);
-CREATE INDEX idx_personal_surname_hash ON personal_details(surname_hash);
-CREATE INDEX idx_personal_ni_hash ON personal_details(ni_hash) WHERE ni_hash IS NOT NULL;
-
--- Contact Information Table
+-- 2. CONTACT_INFORMATION
 CREATE TABLE contact_information (
-    contact_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    email_primary_encrypted BYTEA NOT NULL,
-    email_primary_hash VARCHAR(64) NOT NULL,
-    email_secondary_encrypted BYTEA,
-    email_secondary_hash VARCHAR(64),
-    phone_mobile_encrypted BYTEA,
-    phone_mobile_hash VARCHAR(64),
-    phone_home_encrypted BYTEA,
-    phone_home_hash VARCHAR(64),
-    phone_work_encrypted BYTEA,
-    phone_work_hash VARCHAR(64),
-    phone_extension VARCHAR(20),
-    preferred_contact_method VARCHAR(20), -- 'email', 'phone', 'post'
-    preferred_contact_time VARCHAR(50),
-    marketing_consent BOOLEAN DEFAULT false,
-    marketing_consent_date TIMESTAMP WITH TIME ZONE,
-    email_verified BOOLEAN DEFAULT false,
-    email_verified_at TIMESTAMP WITH TIME ZONE,
-    phone_verified BOOLEAN DEFAULT false,
-    phone_verified_at TIMESTAMP WITH TIME ZONE,
-    encryption_key_id BIGINT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(client_id),
-    UNIQUE(email_primary_hash)
-);
-
-CREATE INDEX idx_contact_email_hash ON contact_information(email_primary_hash);
-CREATE INDEX idx_contact_phone_hash ON contact_information(phone_mobile_hash) WHERE phone_mobile_hash IS NOT NULL;
-
--- Address Table (Supporting Multiple Addresses)
-CREATE TABLE addresses (
-    address_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    address_type address_type_enum NOT NULL,
-    building_name VARCHAR(200),
-    building_number VARCHAR(50),
-    sub_building VARCHAR(100),
-    street_name_encrypted BYTEA,
-    street_name_hash VARCHAR(64),
-    locality VARCHAR(100),
-    town_city_encrypted BYTEA,
-    town_city_hash VARCHAR(64),
+    contact_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES client_profile(client_id) ON DELETE CASCADE,
+    contact_type VARCHAR(20) NOT NULL, -- PRIMARY, SECONDARY, CORRESPONDENCE
+    
+    -- Address Details
+    address_line_1 VARCHAR(200),
+    address_line_2 VARCHAR(200),
+    address_line_3 VARCHAR(200),
+    town_city VARCHAR(100),
     county VARCHAR(100),
-    postcode_encrypted BYTEA NOT NULL,
-    postcode_hash VARCHAR(64) NOT NULL,
-    postcode_area VARCHAR(4), -- First part of postcode for analytics
-    country VARCHAR(100) DEFAULT 'United Kingdom',
-    uprn VARCHAR(50), -- Unique Property Reference Number
-    from_date DATE NOT NULL,
-    to_date DATE,
-    is_current BOOLEAN DEFAULT true,
-    address_verified BOOLEAN DEFAULT false,
-    verified_at TIMESTAMP WITH TIME ZONE,
-    verification_method VARCHAR(50), -- 'manual', 'postcode_lookup', 'document'
-    encryption_key_id BIGINT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_address_dates CHECK (to_date IS NULL OR to_date >= from_date),
-    CONSTRAINT chk_current_address CHECK (is_current = false OR to_date IS NULL)
+    postcode VARCHAR(10),
+    country VARCHAR(3) DEFAULT 'GBR', -- ISO 3166-1 alpha-3
+    
+    -- Address Validation
+    address_verified BOOLEAN DEFAULT FALSE,
+    address_verification_date TIMESTAMP,
+    proof_of_address_document_id UUID REFERENCES documents(document_id),
+    
+    -- Contact Details
+    primary_phone VARCHAR(20), -- Encrypted
+    secondary_phone VARCHAR(20), -- Encrypted
+    mobile_phone VARCHAR(20), -- Encrypted
+    email_address VARCHAR(255), -- Encrypted
+    email_verified BOOLEAN DEFAULT FALSE,
+    email_verification_token VARCHAR(255),
+    email_verified_at TIMESTAMP,
+    
+    -- Preferences
+    preferred_contact_method VARCHAR(20), -- EMAIL, PHONE, POST
+    marketing_consent BOOLEAN DEFAULT FALSE,
+    marketing_consent_date TIMESTAMP,
+    
+    -- Metadata
+    is_current BOOLEAN DEFAULT TRUE,
+    effective_from DATE NOT NULL DEFAULT CURRENT_DATE,
+    effective_to DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT chk_contact_type_valid CHECK (contact_type IN ('PRIMARY', 'SECONDARY', 'CORRESPONDENCE')),
+    CONSTRAINT chk_contact_method_valid CHECK (preferred_contact_method IN ('EMAIL', 'PHONE', 'POST', 'SMS'))
 );
 
-CREATE INDEX idx_addresses_client ON addresses(client_id);
-CREATE INDEX idx_addresses_current ON addresses(client_id, is_current) WHERE is_current = true;
-CREATE INDEX idx_addresses_postcode_hash ON addresses(postcode_hash);
-CREATE INDEX idx_addresses_uprn ON addresses(uprn) WHERE uprn IS NOT NULL;
-
--- Employment Details Table
-CREATE TABLE employment_details (
-    employment_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    employment_status employment_status_enum NOT NULL,
-    employer_name_encrypted BYTEA,
-    employer_name_hash VARCHAR(64),
-    job_title VARCHAR(200),
+-- 3. EMPLOYMENT_INFORMATION
+CREATE TABLE employment_information (
+    employment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES client_profile(client_id) ON DELETE CASCADE,
+    
+    employment_status VARCHAR(30) NOT NULL, 
+    -- EMPLOYED, SELF_EMPLOYED, RETIRED, UNEMPLOYED, STUDENT, OTHER
+    employer_name VARCHAR(200),
+    job_title VARCHAR(100),
     industry_sector VARCHAR(100),
-    occupation_code VARCHAR(20), -- Standard Occupational Classification
-    annual_income_encrypted BYTEA,
-    annual_income_band VARCHAR(50), -- For analytics
+    occupation VARCHAR(100),
+    
+    -- Employment Address
+    employer_address_line_1 VARCHAR(200),
+    employer_address_line_2 VARCHAR(200),
+    employer_town_city VARCHAR(100),
+    employer_postcode VARCHAR(10),
+    employer_country VARCHAR(3) DEFAULT 'GBR',
+    
     employment_start_date DATE,
     employment_end_date DATE,
-    is_current BOOLEAN DEFAULT true,
-    encryption_key_id BIGINT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_employment_dates CHECK (employment_end_date IS NULL OR employment_end_date >= employment_start_date)
+    
+    -- Income Information (Encrypted)
+    annual_income_gross DECIMAL(15,2), -- Encrypted
+    annual_income_net DECIMAL(15,2), -- Encrypted
+    income_currency VARCHAR(3) DEFAULT 'GBP',
+    
+    is_current BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT chk_employment_status_valid CHECK (employment_status IN 
+        ('EMPLOYED', 'SELF_EMPLOYED', 'RETIRED', 'UNEMPLOYED', 'STUDENT', 'OTHER'))
 );
 
-CREATE INDEX idx_employment_client ON employment_details(client_id);
-CREATE INDEX idx_employment_current ON employment_details(client_id, is_current) WHERE is_current = true;
-
--- Financial Profile Table
-CREATE TABLE financial_profiles (
-    financial_profile_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    estimated_net_worth_encrypted BYTEA,
-    net_worth_band VARCHAR(50),
-    liquid_assets_encrypted BYTEA,
-    liquid_assets_band VARCHAR(50),
-    annual_income_encrypted BYTEA,
-    annual_income_band VARCHAR(50),
-    monthly_expenditure_encrypted BYTEA,
-    expenditure_band VARCHAR(50),
-    source_of_wealth TEXT[],
-    source_of_funds TEXT[],
-    tax_residency VARCHAR(100)[],
-    tax_identification_encrypted BYTEA,
-    tin_hash VARCHAR(64),
-    politically_exposed_person BOOLEAN DEFAULT false,
-    pep_relationship VARCHAR(100), -- If related to PEP
-    pep_details JSONB,
-    sanctions_checked BOOLEAN DEFAULT false,
-    sanctions_check_date TIMESTAMP WITH TIME ZONE,
-    sanctions_result VARCHAR(20),
-    encryption_key_id BIGINT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(client_id)
+-- 4. FINANCIAL_PROFILE (Fact Find)
+CREATE TABLE financial_profile (
+    financial_profile_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES client_profile(client_id) ON DELETE CASCADE,
+    
+    -- Wealth & Assets (All Encrypted)
+    total_net_worth DECIMAL(15,2),
+    liquid_assets DECIMAL(15,2),
+    property_value DECIMAL(15,2),
+    pension_value DECIMAL(15,2),
+    investment_portfolio_value DECIMAL(15,2),
+    other_assets DECIMAL(15,2),
+    
+    -- Liabilities (Encrypted)
+    mortgage_outstanding DECIMAL(15,2),
+    loans_outstanding DECIMAL(15,2),
+    credit_card_debt DECIMAL(15,2),
+    other_liabilities DECIMAL(15,2),
+    
+    -- Income Sources
+    salary_income DECIMAL(15,2),
+    dividend_income DECIMAL(15,2),
+    rental_income DECIMAL(15,2),
+    pension_income DECIMAL(15,2),
+    other_income DECIMAL(15,2),
+    
+    -- Regular Expenditure
+    monthly_expenditure DECIMAL(15,2),
+    
+    -- Investment Experience
+    investment_experience_level VARCHAR(20), 
+    -- NONE, LIMITED, MODERATE, EXTENSIVE, PROFESSIONAL
+    years_investing INTEGER,
+    previous_investments TEXT, -- JSON array of investment types
+    
+    -- Risk Profile
+    risk_tolerance VARCHAR(20), -- CONSERVATIVE, MODERATE, BALANCED, GROWTH, AGGRESSIVE
+    risk_capacity VARCHAR(20),
+    investment_objectives TEXT, -- JSON array
+    investment_time_horizon INTEGER, -- Years
+    
+    -- Tax Status
+    tax_residency VARCHAR(3) DEFAULT 'GBR',
+    uk_taxpayer BOOLEAN DEFAULT TRUE,
+    tax_identification_number VARCHAR(50), -- Encrypted
+    
+    currency VARCHAR(3) DEFAULT 'GBP',
+    as_of_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT chk_risk_tolerance_valid CHECK (risk_tolerance IN 
+        ('CONSERVATIVE', 'MODERATE', 'BALANCED', 'GROWTH', 'AGGRESSIVE')),
+    CONSTRAINT chk_investment_exp_valid CHECK (investment_experience_level IN 
+        ('NONE', 'LIMITED', 'MODERATE', 'EXTENSIVE', 'PROFESSIONAL'))
 );
 
-CREATE INDEX idx_financial_client ON financial_profiles(client_id);
-CREATE INDEX idx_financial_pep ON financial_profiles(politically_exposed_person) WHERE politically_exposed_person = true;
-
--- Fact Find Table
-CREATE TABLE fact_finds (
-    fact_find_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    investment_objectives TEXT[],
-    primary_objective VARCHAR(100),
-    risk_tolerance VARCHAR(50), -- 'conservative', 'moderate', 'balanced', 'growth', 'aggressive'
-    risk_score NUMERIC(5,2),
-    investment_horizon_years SMALLINT,
-    capacity_for_loss VARCHAR(50),
-    investment_knowledge VARCHAR(50),
-    investment_experience JSONB, -- {asset_class: years}
-    ethical_preferences TEXT[],
-    exclusions TEXT[],
-    existing_investments JSONB,
-    existing_pensions JSONB,
-    protection_cover JSONB,
-    estate_planning_completed BOOLEAN,
-    will_in_place BOOLEAN,
-    lasting_power_attorney BOOLEAN,
-    notes TEXT,
-    completed_at TIMESTAMP WITH TIME ZONE,
-    reviewed_by BIGINT,
-    reviewed_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(client_id)
+-- 5. INVESTMENT_OBJECTIVES
+CREATE TABLE investment_objectives (
+    objective_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES client_profile(client_id) ON DELETE CASCADE,
+    
+    objective_type VARCHAR(50) NOT NULL,
+    -- RETIREMENT_PLANNING, WEALTH_PRESERVATION, INCOME_GENERATION, 
+    -- CAPITAL_GROWTH, EDUCATION_FUNDING, TAX_EFFICIENCY, OTHER
+    objective_description TEXT,
+    target_amount DECIMAL(15,2), -- Encrypted
+    target_date DATE,
+    priority_rank INTEGER,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_factfind_client ON fact_finds(client_id);
-CREATE INDEX idx_factfind_risk ON fact_finds(risk_tolerance);
-
--- Consent Management Table
-CREATE TABLE consent_management (
-    consent_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    consent_type consent_type_enum NOT NULL,
-    consent_given BOOLEAN NOT NULL,
-    consent_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    consent_version VARCHAR(20) NOT NULL,
-    consent_withdrawn_date TIMESTAMP WITH TIME ZONE,
-    purpose TEXT NOT NULL,
-    legal_basis VARCHAR(100) NOT NULL, -- 'consent', 'contract', 'legal_obligation', etc.
-    ip_address INET,
-    user_agent TEXT,
-    session_id VARCHAR(255),
-    parent_consent_id BIGINT REFERENCES consent_management(consent_id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- 6. BENEFICIARIES
+CREATE TABLE beneficiaries (
+    beneficiary_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES client_profile(client_id) ON DELETE CASCADE,
+    
+    relationship VARCHAR(50) NOT NULL, 
+    -- SPOUSE, CHILD, PARENT, SIBLING, TRUST, CHARITY, OTHER
+    title VARCHAR(10),
+    first_name VARCHAR(100) NOT NULL,
+    surname VARCHAR(100) NOT NULL,
+    date_of_birth DATE,
+    
+    allocation_percentage DECIMAL(5,2),
+    
+    -- Contact Information
+    address_line_1 VARCHAR(200),
+    town_city VARCHAR(100),
+    postcode VARCHAR(10),
+    country VARCHAR(3),
+    phone VARCHAR(20), -- Encrypted
+    email VARCHAR(255), -- Encrypted
+    
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT chk_allocation_valid CHECK (allocation_percentage >= 0 AND allocation_percentage <= 100)
 );
 
-CREATE INDEX idx_consent_client ON consent_management(client_id);
-CREATE INDEX idx_consent_type ON consent_management(client_id, consent_type);
-CREATE INDEX idx_consent_active ON consent_management(client_id, consent_type) 
-    WHERE consent_given = true AND consent_withdrawn_date IS NULL;
-
--- Document Metadata Table
-CREATE TABLE document_metadata (
-    document_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    document_type VARCHAR(100) NOT NULL, -- 'proof_of_id', 'proof_of_address', 'bank_statement', etc.
+-- 7. DOCUMENTS
+CREATE TABLE documents (
+    document_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES client_profile(client_id) ON DELETE CASCADE,
+    
+    document_type VARCHAR(50) NOT NULL,
+    -- ID_PROOF, PROOF_OF_ADDRESS, BANK_STATEMENT, TAX_RETURN, 
+    -- SIGNATURE, W8_BEN, OTHER
     document_name VARCHAR(255) NOT NULL,
-    storage_path_encrypted BYTEA NOT NULL,
-    storage_provider VARCHAR(50), -- 's3', 'azure_blob', 'local'
-    mime_type VARCHAR(100),
     file_size_bytes BIGINT,
+    mime_type VARCHAR(100),
+    
+    -- Storage
+    storage_location VARCHAR(500) NOT NULL, -- Encrypted path/URL
+    storage_provider VARCHAR(50), -- S3, AZURE_BLOB, etc.
+    encryption_key_id VARCHAR(100), -- Reference to KMS key
+    
+    -- Verification
+    verification_status VARCHAR(20) DEFAULT 'PENDING',
+    -- PENDING, VERIFIED, REJECTED, EXPIRED
+    verified_by UUID REFERENCES system_users(user_id),
+    verified_at TIMESTAMP,
+    rejection_reason TEXT,
+    
+    -- Compliance
+    document_expiry_date DATE,
+    retention_until DATE NOT NULL, -- FCA retention period
+    
+    -- Metadata
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    uploaded_by UUID,
     checksum_sha256 VARCHAR(64),
-    encryption_algorithm VARCHAR(50),
-    encryption_key_id BIGINT NOT NULL,
-    uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    uploaded_by VARCHAR(255),
-    verified_at TIMESTAMP WITH TIME ZONE,
-    verified_by BIGINT,
-    expiry_date DATE,
-    retention_until DATE NOT NULL,
-    is_deleted BOOLEAN DEFAULT false,
-    deleted_at TIMESTAMP WITH TIME ZONE,
     virus_scan_status VARCHAR(20),
-    virus_scan_date TIMESTAMP WITH TIME ZONE,
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    virus_scan_date TIMESTAMP,
+    
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    
+    CONSTRAINT chk_verification_status_valid CHECK (verification_status IN 
+        ('PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED'))
 );
 
-CREATE INDEX idx_documents_client ON document_metadata(client_id);
-CREATE INDEX idx_documents_type ON document_metadata(client_id, document_type);
-CREATE INDEX idx_documents_expiry ON document_metadata(expiry_date) WHERE expiry_date IS NOT NULL;
+-- 8. CONSENT_RECORDS
+CREATE TABLE consent_records (
+    consent_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES client_profile(client_id) ON DELETE CASCADE,
+    
+    consent_type VARCHAR(50) NOT NULL,
+    -- DATA_PROCESSING, MARKETING, THIRD_PARTY_SHARING, CREDIT_CHECK, 
+    -- AUTOMATED_DECISION_MAKING, TERMS_CONDITIONS
+    consent_given BOOLEAN NOT NULL,
+    consent_version VARCHAR(20) NOT NULL, -- Version of T&C/Privacy Policy
+    
+    consent_text TEXT NOT NULL, -- Full text shown to client
+    consent_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- IP and Device Information for audit
+    ip_address INET,
+    user_agent TEXT,
+    
+    -- Withdrawal
+    withdrawn BOOLEAN DEFAULT FALSE,
+    withdrawn_at TIMESTAMP,
+    withdrawal_reason TEXT,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- Audit Log Table (Immutable)
+-- 9. FORM_SUBMISSIONS
+CREATE TABLE form_submissions (
+    submission_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID REFERENCES client_profile(client_id),
+    
+    session_id UUID NOT NULL,
+    form_version VARCHAR(20) NOT NULL,
+    
+    -- Submission Progress
+    current_step INTEGER DEFAULT 1,
+    total_steps INTEGER DEFAULT 5,
+    completion_percentage DECIMAL(5,2),
+    
+    -- Submission Data (Encrypted JSON)
+    form_data JSONB, -- Encrypted blob of all form data
+    
+    submission_status VARCHAR(30) DEFAULT 'IN_PROGRESS',
+    -- IN_PROGRESS, COMPLETED, ABANDONED, SUBMITTED
+    
+    -- Tracking
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    
+    -- Device/Browser Info
+    ip_address INET,
+    user_agent TEXT,
+    referrer_url TEXT,
+    
+    -- Data Validation
+    validation_errors JSONB,
+    
+    CONSTRAINT chk_submission_status_valid CHECK (submission_status IN 
+        ('IN_PROGRESS', 'COMPLETED', 'ABANDONED', 'SUBMITTED'))
+);
+
+-- 10. AUDIT_LOG
 CREATE TABLE audit_log (
-    audit_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT,
+    audit_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- What
     table_name VARCHAR(100) NOT NULL,
-    record_id BIGINT NOT NULL,
-    action_type audit_action_enum NOT NULL,
+    record_id UUID NOT NULL,
+    operation VARCHAR(20) NOT NULL, -- INSERT, UPDATE, DELETE, SELECT
+    
+    -- Who
+    user_id UUID REFERENCES system_users(user_id),
+    user_email VARCHAR(255),
+    user_role VARCHAR(50),
+    
+    -- When
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Where
+    ip_address INET,
+    session_id UUID,
+    
+    -- Changes
+    old_values JSONB,
+    new_values JSONB,
+    changed_fields TEXT[],
+    
+    -- Context
+    application VARCHAR(100),
+    action_description TEXT,
+    
+    -- Compliance
+    compliance_relevant BOOLEAN DEFAULT FALSE,
+    retention_until DATE,
+    
+    CONSTRAINT chk_operation_valid CHECK (operation IN 
+        ('INSERT', 'UPDATE', 'DELETE', 'SELECT', 'EXPORT'))
+);
+
+-- 11. DATA_QUALITY_CHECKS
+CREATE TABLE data_quality_checks (
+    check_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID REFERENCES client_profile(client_id),
+    
+    check_type VARCHAR(50) NOT NULL,
+    -- COMPLETENESS, ACCURACY, CONSISTENCY, VALIDITY, DUPLICATE_CHECK
+    check_status VARCHAR(20) NOT NULL, -- PASSED, FAILED, WARNING
+    
     field_name VARCHAR(100),
-    old_value_hash VARCHAR(64),
-    new_value_hash VARCHAR(64),
-    changed_by VARCHAR(255) NOT NULL,
-    changed_by_type VARCHAR(50), -- 'client', 'advisor', 'system', 'admin'
-    changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    ip_address INET,
-    user_agent TEXT,
-    session_id VARCHAR(255),
-    request_id VARCHAR(100),
-    reason TEXT,
-    compliance_flag BOOLEAN DEFAULT false,
-    CONSTRAINT no_audit_updates CHECK (changed_at = created_at),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    expected_value TEXT,
+    actual_value TEXT,
+    error_message TEXT,
+    severity VARCHAR(20), -- LOW, MEDIUM, HIGH, CRITICAL
+    
+    checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved BOOLEAN DEFAULT FALSE,
+    resolved_at TIMESTAMP,
+    resolved_by UUID REFERENCES system_users(user_id),
+    
+    CONSTRAINT chk_status_valid CHECK (check_status IN ('PASSED', 'FAILED', 'WARNING')),
+    CONSTRAINT chk_severity_valid CHECK (severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'))
 );
 
-CREATE INDEX idx_audit_client ON audit_log(client_id, changed_at DESC);
-CREATE INDEX idx_audit_table_record ON audit_log(table_name, record_id, changed_at DESC);
-CREATE INDEX idx_audit_timestamp ON audit_log(changed_at DESC);
-CREATE INDEX idx_audit_user ON audit_log(changed_by, changed_at DESC);
-
--- Data Retention Log Table
-CREATE TABLE data_retention_log (
-    retention_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    data_category VARCHAR(100) NOT NULL,
-    retention_period_months SMALLINT NOT NULL,
-    legal_basis VARCHAR(200) NOT NULL,
-    retention_start_date DATE NOT NULL,
-    scheduled_deletion_date DATE NOT NULL,
-    deletion_executed_date TIMESTAMP WITH TIME ZONE,
-    deletion_method VARCHAR(50), -- 'hard_delete', 'anonymize', 'archive'
-    verification_hash VARCHAR(64),
-    deleted_by VARCHAR(255),
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- 12. SYSTEM_USERS (Reference table)
+CREATE TABLE system_users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_retention_client ON data_retention_log(client_id);
-CREATE INDEX idx_retention_scheduled ON data_retention_log(scheduled_deletion_date) 
-    WHERE deletion_executed_date IS NULL;
-
--- Encryption Key Management Table
-CREATE TABLE encryption_key_management (
-    key_id BIGSERIAL PRIMARY KEY,
-    key_version VARCHAR(50) NOT NULL,
-    algorithm VARCHAR(50) NOT NULL, -- 'AES-256-GCM', 'RSA-4096'
-    key_encrypted_key BYTEA NOT NULL, -- KEK encrypted DEK
-    master_key_id VARCHAR(255) NOT NULL, -- Reference to HSM/KMS
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    rotated_at TIMESTAMP WITH TIME ZONE,
-    expires_at TIMESTAMP WITH TIME ZONE,
-    status VARCHAR(20) DEFAULT 'active', -- 'active', 'rotated', 'expired', 'revoked'
-    key_purpose VARCHAR(100), -- 'data_encryption', 'document_encryption'
-    CONSTRAINT chk_key_status CHECK (status IN ('active', 'rotated', 'expired', 'revoked'))
+-- 13. CRM_SYNC_STATUS
+CREATE TABLE crm_sync_status (
+    sync_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL REFERENCES client_profile(client_id),
+    
+    target_system VARCHAR(50) NOT NULL, -- SALESFORCE, DYNAMICS, CUSTOM_CRM
+    external_client_id VARCHAR(100),
+    
+    sync_status VARCHAR(30) NOT NULL,
+    -- PENDING, IN_PROGRESS, SUCCESS, FAILED, RETRY
+    sync_direction VARCHAR(20), -- OUTBOUND, INBOUND, BIDIRECTIONAL
+    
+    last_sync_attempt TIMESTAMP,
+    last_successful_sync TIMESTAMP,
+    sync_error_message TEXT,
+    retry_count INTEGER DEFAULT 0,
+    
+    payload_sent JSONB,
+    response_received JSONB,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT chk_sync_status_valid CHECK (sync_status IN 
+        ('PENDING', 'IN_PROGRESS', 'SUCCESS', 'FAILED', 'RETRY'))
 );
-
-CREATE INDEX idx_encryption_status ON encryption_key_management(status, expires_at);
-
--- Session Management for Form Progress
-CREATE TABLE form_sessions (
-    session_id VARCHAR(255) PRIMARY KEY,
-    client_uuid UUID NOT NULL REFERENCES clients(client_uuid),
-    session_data JSONB, -- Encrypted session data
-    current_step onboarding_stage_enum,
-    last_activity TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    ip_address INET,
-    user_agent TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_session_client ON form_sessions(client_uuid);
-CREATE INDEX idx_session_expiry ON form_sessions(expires_at);
-
--- Validation Rules Table
-CREATE TABLE validation_rules (
-    rule_id BIGSERIAL PRIMARY KEY,
-    field_name VARCHAR(100) NOT NULL,
-    rule_type VARCHAR(50) NOT NULL, -- 'regex', 'range', 'lookup', 'custom'
-    rule_definition JSONB NOT NULL,
-    error_message TEXT NOT NULL,
-    is_active BOOLEAN DEFAULT true,
-    priority SMALLINT DEFAULT 100,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_validation_field ON validation_rules(field_name) WHERE is_active = true;
 ```
 
-### 3.2 Indexing Strategy
+### 1.2 Indexing Strategy
 
-**Primary Indexes**:
-- Primary keys on all tables (automatic B-tree indexes)
-- Unique constraints on client_uuid, email hashes, NI hashes
-
-**Search Optimization**:
-- Hash indexes for encrypted field lookups (first_name_hash, surname_hash)
-- Composite indexes for common query patterns (client_id + is_current)
-- GIN indexes on JSONB fields for fact find data
-
-**Performance Indexes**:
-- Partial indexes for active records only
-- Covering indexes for frequently accessed columns
-- Descending indexes on timestamp fields for recent record retrieval
-
-**Index Maintenance**:
 ```sql
--- Weekly index maintenance job
-REINDEX INDEX CONCURRENTLY idx_clients_stage;
-ANALYZE clients;
-VACUUM ANALYZE audit_log;
+-- ============================================================================
+-- INDEXING STRATEGY
+-- PURPOSE: Optimize query performance for common access patterns
+-- ============================================================================
+
+-- CLIENT_PROFILE Indexes
+CREATE INDEX idx_client_profile_reference ON client_profile(client_reference);
+CREATE INDEX idx_client_profile_status ON client_profile(onboarding_status);
+CREATE INDEX idx_client_profile_submission_date ON client_profile(form_submission_date);
+CREATE INDEX idx_client_profile_risk_rating ON client_profile(risk_rating);
+CREATE INDEX idx_client_profile_created_at ON client_profile(created_at DESC);
+CREATE INDEX idx_client_profile_surname ON client_profile(surname);
+CREATE INDEX idx_client_profile_active ON client_profile(onboarding_status) 
+    WHERE is_deleted = FALSE;
+
+-- CONTACT_INFORMATION Indexes
+CREATE INDEX idx_contact_client_id ON contact_information(client_id);
+CREATE INDEX idx_contact_type ON contact_information(client_id, contact_type) 
+    WHERE is_current = TRUE;
+CREATE INDEX idx_contact_postcode ON contact_information(postcode);
+CREATE INDEX idx_contact_email_verified ON contact_information(email_verified);
+
+-- EMPLOYMENT_INFORMATION Indexes
+CREATE INDEX idx_employment_client_id ON employment_information(client_id);
+CREATE INDEX idx_employment_current ON employment_information(client_id) 
+    WHERE is_current = TRUE;
+
+-- FINANCIAL_PROFILE Indexes
+CREATE INDEX idx_financial_client_id ON financial_profile(client_id);
+CREATE INDEX idx_financial_as_of_date ON financial_profile(as_of_date DESC);
+CREATE INDEX idx_financial_risk_tolerance ON financial_profile(risk_tolerance);
+
+-- DOCUMENTS Indexes
+CREATE INDEX idx_documents_client_id ON documents(client_id);
+CREATE INDEX idx_documents_type ON documents(document_type);
+CREATE INDEX idx_documents_verification_status ON documents(verification_status);
+CREATE INDEX idx_documents_expiry ON documents(document_expiry_date) 
+    WHERE document_expiry_date IS NOT NULL;
+CREATE INDEX idx_documents_retention ON documents(retention_until);
+CREATE INDEX idx_documents_active ON documents(client_id, document_type) 
+    WHERE is_deleted = FALSE;
+
+-- AUDIT_LOG Indexes
+CREATE INDEX idx_audit_table_record ON audit_log(table_name, record_id);
+CREATE INDEX idx_audit_user ON audit_log(user_id);
+CREATE INDEX idx_audit_timestamp ON audit_log(timestamp DESC);
+CREATE INDEX idx_audit_compliance ON audit_log(timestamp DESC) 
+    WHERE compliance_relevant = TRUE;
+
+-- FORM_SUBMISSIONS Indexes
+CREATE INDEX idx_form_client_id ON form_submissions(client_id);
+CREATE INDEX idx_form_session_id ON form_submissions(session_id);
+CREATE INDEX idx_form_status ON form_submissions(submission_status);
+CREATE INDEX idx_form_started_at ON form_submissions(started_at DESC);
+
+-- CRM_SYNC_STATUS Indexes
+CREATE INDEX idx_sync_client_id ON crm_sync_status(client_id);
+CREATE INDEX idx_sync_status ON crm_sync_status(sync_status);
+CREATE INDEX idx_sync_external_id ON crm_sync_status(target_system, external_client_id);
+CREATE INDEX idx_sync_retry ON crm_sync_status(sync_status, retry_count) 
+    WHERE sync_status = 'FAILED';
+
+-- CONSENT_RECORDS Indexes
+CREATE INDEX idx_consent_client_id ON consent_records(client_id);
+CREATE INDEX idx_consent_type ON consent_records(consent_type);
+CREATE INDEX idx_consent_timestamp ON consent_records(consent_timestamp DESC);
+
+-- DATA_QUALITY_CHECKS Indexes
+CREATE INDEX idx_dq_client_id ON data_quality_checks(client_id);
+CREATE INDEX idx_dq_status ON data_quality_checks(check_status);
+CREATE INDEX idx_dq_unresolved ON data_quality_checks(severity, checked_at DESC) 
+    WHERE resolved = FALSE;
 ```
 
-### 3.3 Database Constraints and Rules
-
-**Data Integrity Constraints**:
+### 1.3 Encryption Strategy
 
 ```sql
--- Trigger to maintain updated_at timestamp
-CREATE OR REPLACE FUNCTION update_modified_column()
-RETURNS TRIGGER AS $$
+-- ============================================================================
+-- ENCRYPTION STRATEGY
+-- PURPOSE: Column-level encryption for sensitive data
+-- ============================================================================
+
+-- Install pgcrypto extension
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Encryption wrapper functions
+CREATE OR REPLACE FUNCTION encrypt_sensitive_data(plaintext TEXT)
+RETURNS BYTEA AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
+    -- Uses application-managed encryption key stored in AWS KMS/Azure Key Vault
+    RETURN pgp_sym_encrypt(plaintext, current_setting('app.encryption_key'));
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Apply to all relevant tables
-CREATE TRIGGER update_clients_modtime BEFORE UPDATE ON clients
-    FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
--- Prevent direct updates to audit_log
-CREATE OR REPLACE FUNCTION prevent_audit_modification()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION decrypt_sensitive_data(ciphertext BYTEA)
+RETURNS TEXT AS $$
 BEGIN
-    RAISE EXCEPTION 'Audit log records are immutable';
+    RETURN pgp_sym_decrypt(ciphertext, current_setting('app.encryption_key'));
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER no_audit_updates BEFORE UPDATE ON audit_log
-    FOR EACH ROW EXECUTE FUNCTION prevent_audit_modification();
+-- Apply encryption to sensitive columns (modify table structure)
+-- Note: In production, these should be BYTEA columns with application-level encryption
 
--- Automatic audit trail trigger
-CREATE OR REPLACE FUNCTION create_audit_trail()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO audit_log (
-        client_id, table_name, record_id, action_type,
-        changed_by, changed_by_type, session_id
-    ) VALUES (
-        COALESCE(NEW.client_id, OLD.client_id),
-        TG_TABLE_NAME,
-        COALESCE(NEW.client_id, OLD.client_id),
-        TG_OP::audit_action_enum,
-        current_user,
-        'system',
-        current_setting('app.session_id', true)
-    );
-    RETURN NULL;
-END;
-$$ language 'plpgsql';
-
--- Apply to sensitive tables
-CREATE TRIGGER audit_personal_details AFTER INSERT OR UPDATE OR DELETE ON personal_details
-    FOR EACH ROW EXECUTE FUNCTION create_audit_trail();
+-- Fields requiring encryption:
+-- client_profile: national_insurance_number, pep_details
+-- contact_information: primary_phone, secondary_phone, mobile_phone, email_address
+-- employment_information: annual_income_gross, annual_income_net
+-- financial_profile: ALL monetary fields, tax_identification_number
+-- beneficiaries: phone, email
+-- documents: storage_location
 ```
 
 ---
 
-## 4. Security Architecture
-
-### 4.1 Encryption Strategy
-
-#### 4.1.1 Encryption at Rest
-
-**Multi-Layer Encryption Approach**:
+## 2. Entity Relationship Diagram
 
 ```
-┌─────────────────────────────────────────┐
-│  Layer 1: Disk Encryption (LUKS/BitLocker)│
-├─────────────────────────────────────────┤
-│  Layer 2: Database TDE (Transparent Data │
-│           Encryption)                    │
-├─────────────────────────────────────────┤
-│  Layer 3: Column-Level Encryption        │
-│           (Application-Managed)          │
-├─────────────────────────────────────────┤
-│  Layer 4: Document Encryption            │
-│           (Pre-upload Client-Side)       │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         CLIENT_PROFILE (Core)                           │
+│  - client_id (PK)                                                       │
+│  - client_reference (UK)                                                │
+│  - Personal identifiers                                                 │
+│  - PEP status                                                           │
+│  - Risk rating                                                          │
+│  - Onboarding status                                                    │
+└────────────┬────────────────────────────────────────────────────────────┘
+             │
+             ├──────────────┬──────────────┬──────────────┬──────────────┐
+             │              │              │              │              │
+             ▼              ▼              ▼              ▼              ▼
+     ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+     │   CONTACT_   │ │ EMPLOYMENT_  │ │  FINANCIAL_  │ │ INVESTMENT_  │ │ BENEFICIARIES│
+     │ INFORMATION  │ │ INFORMATION  │ │   PROFILE    │ │  OBJECTIVES  │ │              │
+     │              │ │              │ │              │ │              │ │              │
+     │ - Multiple   │ │ - Current &  │ │ - Net worth  │ │ - Goals      │ │ - Multiple   │
+     │   addresses  │ │   historical │ │ - Income     │ │ - Targets    │ │   records    │
+     │ - Phones     │ │ - Income     │ │ - Risk prof. │ │ - Timeline   │ │ - Allocation │
+     │ - Email      │ │              │ │ - Tax status │ │              │ │              │
+     └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
+             │
+             ├──────────────┬──────────────┬──────────────┬──────────────┐
+             │              │              │              │              │
+             ▼              ▼              ▼              ▼              ▼
+     ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+     │  DOCUMENTS   │ │   CONSENT_   │ │    FORM_     │ │     AUDIT_   │ │  CRM_SYNC_   │
+     │              │ │   RECORDS    │ │ SUBMISSIONS  │ │      LOG     │ │    STATUS    │
+     │ - KYC docs   │ │              │ │              │ │              │ │              │
+     │ - Proof      │ │ - GDPR       │ │ - Progress   │ │ - All        │ │ - External   │
+     │ - Retention  │ │ - Marketing  │ │ - Validation │ │   changes    │ │   system ID  │
+     │              │ │ - Version    │ │              │ │ - Compliance │ │ - Sync state │
+     └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
 ```
 
-**Implementation Details**:
+**Relationship Cardinality:**
+- Client Profile → Contact Information: 1:N (one client, multiple contact records)
+- Client Profile → Employment: 1:N (current and historical)
+- Client Profile → Financial Profile: 1:N (point-in-time snapshots)
+- Client Profile → Documents: 1:N
+- Client Profile → Consent Records: 1:N
+- Client Profile → Beneficiaries: 1:N
+- Client Profile → Investment Objectives: 1:N
 
-1. **Envelope Encryption Pattern**:
-   - Master Key: Stored in AWS KMS / Azure Key Vault / Google Cloud KMS
-   - Data Encryption Keys (DEK): Generated per client, encrypted with Master Key
-   - Field Encryption: AES-256-GCM with unique DEK per client
+---
 
-```python
-# Pseudo-code for encryption implementation
-class FieldEncryption:
-    def __init__(self, kms_client, master_key_id):
-        self.kms = kms_client
-        self.master_key_id =
+## 3. Data Pipeline Architecture
+
+### 3.1 High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        DATA PIPELINE ARCHITECTURE                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────┐
+│   WEB FORM UI    │
+│  (React/Vue.js)  │
+└────────┬─────────┘
+         │ HTTPS/TLS 1.3
+         │ JWT Token
+         ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        API GATEWAY / LOAD BALANCER                       │
+│  - Rate limiting (100 req/min per IP)                                    │
+│  - DDoS protection                                                       │
+│  - Request validation                                                    │
+│  - SSL termination                                                       │
+└────────┬─────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                      APPLICATION TIER (Microservices)                    │
+│                                                                           │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐         │
+│  │ Form Submission │  │   Validation    │  │   Document      │         │
+│  │    Service      │  │    Service      │  │   Upload Svc    │         │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘         │
+│           │                     │                     │                  │
+│           └─────────────────────┴─────────────────────┘                  │
+│                                 │                                        │
+└─────────────────────────────────┼────────────────────────────────────────┘
+                                  │
+         ┌────────────────────────┼────────────────────────┐
+         │                        │                        │
+         ▼                        ▼                        ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Message Queue  │    │   PostgreSQL    │    │  Object Storage │
+│  (RabbitMQ/SQS) │    │   Primary DB    │    │  (S3/Azure)     │
+│                 │    │                 │    │                 │
+│ - Form events   │    │ - Client data   │    │ - Documents     │
+│ - Sync jobs     │    │ - Encrypted PII │    │ - Encrypted     │
+│ - Notifications │    │ - Audit logs    │    │ - Versioned     │
+└────────┬────────┘    └────────┬────────┘    └─────────────────┘
+         │                      │
+         │                      │ Read Replica (Analytics)
+         │                      ▼
+         │             ┌─────────────────┐
+         │             │   PostgreSQL    │
+         │             │  Read Replica   │
+         │             └─────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                      INTEGRATION & TRANSFORMATION LAYER                  │
+│                                                                           │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐         │
+│  │   ETL Engine    │  │  Data Quality   │  │    Change Data  │         │
+│  │   (Apache       │  │   Validator     │  │    Capture      │         │
+│  │   NiFi/Airflow) │  │                 │  │    (Debezium)   │         │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘         │
+│           │                     │                     │                  │
+│           └─────────────────────┴─────────────────────┘                  │
+└───────────────────────────────────┬──────────────────────────────────────┘
+                                    │
+         ┌──────────────────────────┼──────────────────────────┐
+         │                          │                          │
+         ▼                          ▼                          

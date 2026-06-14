@@ -1,4 +1,4 @@
-# Full-Stack Form Application Development
+# Develop Full-Stack Web Form Application
 
 **Agent:** full_stack_dev
 **Job:** Client Responsive Webform
@@ -9,157 +9,403 @@
 
 ## Executive Summary
 
-This document provides a complete implementation of a multi-step responsive web form for UK wealth management firms to collect client information in compliance with FCA regulations. The solution includes frontend UI, backend API, database schema, security features, and deployment instructions.
+This document provides a comprehensive implementation of a multi-step, responsive web form for UK wealth management firms to collect client information in compliance with FCA regulations. The solution includes a React frontend with TypeScript, Node.js/Express backend, PostgreSQL database, and Redis for session management.
 
-## Technology Stack
+## Table of Contents
 
-### Frontend
-- **Framework**: React 18 with TypeScript
-- **Styling**: Tailwind CSS + shadcn/ui components
-- **Form Management**: React Hook Form + Zod validation
-- **State Management**: React Context API
-- **HTTP Client**: Axios with interceptors
+1. [Architecture Overview](#architecture-overview)
+2. [Database Schema](#database-schema)
+3. [Backend Implementation](#backend-implementation)
+4. [Frontend Implementation](#frontend-implementation)
+5. [API Documentation](#api-documentation)
+6. [Security & Compliance](#security-compliance)
+7. [Testing Strategy](#testing-strategy)
+8. [Deployment Instructions](#deployment-instructions)
+9. [Performance Considerations](#performance-considerations)
 
-### Backend
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js with TypeScript
-- **Validation**: Zod
-- **Database**: PostgreSQL 14+
-- **ORM**: Prisma
-- **Security**: Helmet, express-rate-limit, csurf
-- **Authentication**: JWT (optional for future enhancement)
+---
+
+## Architecture Overview
+
+### Technology Stack
+
+**Frontend:**
+- React 18 with TypeScript
+- React Hook Form for form management
+- Zod for schema validation
+- Tailwind CSS for responsive design
+- Axios for API communication
+- React Router for navigation
+
+**Backend:**
+- Node.js with Express
+- TypeScript
+- PostgreSQL for persistent storage
+- Redis for session/auto-save management
+- Joi for server-side validation
+- Winston for logging
+- Helmet for security headers
+
+**Infrastructure:**
+- Docker for containerization
+- Nginx as reverse proxy
+- Let's Encrypt for SSL/TLS
+
+### System Architecture Diagram
+
+```
+┌─────────────┐     HTTPS      ┌──────────────┐
+│   Browser   │ ◄──────────────► │    Nginx     │
+└─────────────┘                 └──────┬───────┘
+                                       │
+                         ┌─────────────┼─────────────┐
+                         │                           │
+                    ┌────▼─────┐              ┌─────▼──────┐
+                    │  React   │              │  Express   │
+                    │  App     │              │  API       │
+                    └──────────┘              └─────┬──────┘
+                                                    │
+                                       ┌────────────┼────────────┐
+                                       │                         │
+                                  ┌────▼─────┐           ┌──────▼─────┐
+                                  │PostgreSQL│           │   Redis    │
+                                  │ Database │           │   Cache    │
+                                  └──────────┘           └────────────┘
+```
+
+---
 
 ## Database Schema
 
-### Prisma Schema (`prisma/schema.prisma`)
+### PostgreSQL Schema
 
-```prisma
-generator client {
-  provider = "prisma-client-js"
-}
+```sql
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+-- Enum types
+CREATE TYPE submission_status AS ENUM ('draft', 'in_progress', 'completed', 'submitted', 'archived');
+CREATE TYPE marital_status AS ENUM ('single', 'married', 'civil_partnership', 'divorced', 'widowed', 'separated');
+CREATE TYPE employment_status AS ENUM ('employed', 'self_employed', 'retired', 'unemployed', 'student', 'other');
+CREATE TYPE risk_tolerance AS ENUM ('low', 'medium', 'high', 'very_high');
 
-model Client {
-  id                    String   @id @default(uuid())
-  formStatus            String   @default("draft") // draft, submitted, reviewed
-  currentStep           Int      @default(1)
-  
-  // Personal Details
-  title                 String?
-  firstName             String
-  middleName            String?
-  lastName              String
-  dateOfBirth           DateTime
-  nationalInsuranceNumber String?
-  nationality           String
-  
-  // Contact Information
-  email                 String   @unique
-  phoneNumber           String
-  mobileNumber          String?
-  
-  // Address
-  addressLine1          String
-  addressLine2          String?
-  city                  String
-  county                String?
-  postcode              String
-  country               String   @default("United Kingdom")
-  yearsAtAddress        Int?
-  
-  // Previous Address (if less than 3 years at current)
-  prevAddressLine1      String?
-  prevAddressLine2      String?
-  prevCity              String?
-  prevCounty            String?
-  prevPostcode          String?
-  prevCountry           String?
-  
-  // Employment Information
-  employmentStatus      String
-  occupation            String?
-  employerName          String?
-  employerAddress       String?
-  annualIncome          Decimal? @db.Decimal(12, 2)
-  
-  // Fact Find - Financial Situation
-  totalAssets           Decimal? @db.Decimal(12, 2)
-  totalLiabilities      Decimal? @db.Decimal(12, 2)
-  monthlyExpenditure    Decimal? @db.Decimal(12, 2)
-  existingInvestments   Json?    // Array of investment objects
-  
-  // Fact Find - Investment Objectives
-  investmentObjectives  String[] // growth, income, capital_preservation
-  investmentTimeHorizon String?  // short_term, medium_term, long_term
-  riskTolerance         String?  // low, medium, high
-  investmentKnowledge   String?  // none, basic, good, extensive
-  
-  // Fact Find - Tax Status
-  taxResidency          String
-  taxIdentificationNumber String?
-  isPEP                 Boolean  @default(false) // Politically Exposed Person
-  pepDetails            String?
-  
-  // Marketing & Consent
-  marketingConsent      Boolean  @default(false)
-  termsAccepted         Boolean  @default(false)
-  dataProcessingConsent Boolean  @default(false)
-  
-  // Metadata
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  submittedAt           DateTime?
-  ipAddress             String?
-  userAgent             String?
-  
-  // Relations
-  documents             Document[]
-  auditLogs             AuditLog[]
-  
-  @@index([email])
-  @@index([formStatus])
-  @@index([createdAt])
-}
+-- Main client submissions table
+CREATE TABLE client_submissions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id VARCHAR(255) UNIQUE NOT NULL,
+    status submission_status DEFAULT 'draft',
+    current_step INTEGER DEFAULT 1,
+    total_steps INTEGER DEFAULT 6,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    submitted_at TIMESTAMP WITH TIME ZONE,
+    ip_address INET,
+    user_agent TEXT,
+    
+    -- Audit fields
+    version INTEGER DEFAULT 1,
+    archived BOOLEAN DEFAULT FALSE,
+    
+    -- Indexes
+    CONSTRAINT valid_step CHECK (current_step >= 1 AND current_step <= total_steps)
+);
 
-model Document {
-  id           String   @id @default(uuid())
-  clientId     String
-  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  
-  documentType String   // id_proof, address_proof, bank_statement
-  fileName     String
-  fileSize     Int
-  mimeType     String
-  storagePath  String
-  
-  uploadedAt   DateTime @default(now())
-  
-  @@index([clientId])
-}
+-- Personal details
+CREATE TABLE personal_details (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    submission_id UUID REFERENCES client_submissions(id) ON DELETE CASCADE,
+    
+    -- Name
+    title VARCHAR(20),
+    first_name VARCHAR(100) NOT NULL,
+    middle_names VARCHAR(100),
+    last_name VARCHAR(100) NOT NULL,
+    preferred_name VARCHAR(100),
+    
+    -- Date of birth
+    date_of_birth DATE NOT NULL,
+    
+    -- National Insurance
+    national_insurance_number VARCHAR(13),
+    
+    -- Marital status
+    marital_status marital_status,
+    
+    -- Nationality
+    nationality VARCHAR(100),
+    country_of_birth VARCHAR(100),
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_dob CHECK (date_of_birth <= CURRENT_DATE AND date_of_birth >= '1900-01-01'),
+    CONSTRAINT valid_ni_format CHECK (national_insurance_number ~ '^[A-Z]{2}[0-9]{6}[A-D]$' OR national_insurance_number IS NULL)
+);
 
-model AuditLog {
-  id        String   @id @default(uuid())
-  clientId  String
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  
-  action    String   // created, updated, submitted, viewed
-  step      Int?
-  fieldName String?
-  oldValue  String?
-  newValue  String?
-  ipAddress String?
-  userAgent String?
-  
-  createdAt DateTime @default(now())
-  
-  @@index([clientId])
-  @@index([createdAt])
-}
+-- Contact information
+CREATE TABLE contact_information (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    submission_id UUID REFERENCES client_submissions(id) ON DELETE CASCADE,
+    
+    -- Email
+    email VARCHAR(255) NOT NULL,
+    email_verified BOOLEAN DEFAULT FALSE,
+    email_verification_token VARCHAR(255),
+    
+    -- Phone numbers
+    primary_phone VARCHAR(20) NOT NULL,
+    primary_phone_verified BOOLEAN DEFAULT FALSE,
+    secondary_phone VARCHAR(20),
+    mobile_phone VARCHAR(20),
+    
+    -- Preferred contact method
+    preferred_contact_method VARCHAR(20) DEFAULT 'email',
+    preferred_contact_time VARCHAR(50),
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z]{2,}$'),
+    CONSTRAINT valid_contact_method CHECK (preferred_contact_method IN ('email', 'phone', 'post', 'no_preference'))
+);
+
+-- Address information
+CREATE TABLE addresses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    submission_id UUID REFERENCES client_submissions(id) ON DELETE CASCADE,
+    address_type VARCHAR(20) NOT NULL, -- 'current', 'previous', 'correspondence'
+    
+    -- Address fields
+    address_line_1 VARCHAR(255) NOT NULL,
+    address_line_2 VARCHAR(255),
+    address_line_3 VARCHAR(255),
+    town_city VARCHAR(100) NOT NULL,
+    county VARCHAR(100),
+    postcode VARCHAR(10) NOT NULL,
+    country VARCHAR(100) DEFAULT 'United Kingdom',
+    
+    -- Residency information
+    move_in_date DATE,
+    residential_status VARCHAR(50), -- 'owner', 'tenant', 'living_with_family'
+    years_at_address INTEGER,
+    
+    is_primary BOOLEAN DEFAULT FALSE,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_uk_postcode CHECK (
+        country != 'United Kingdom' OR 
+        postcode ~* '^[A-Z]{1,2}[0-9]{1,2}[A-Z]?\s?[0-9][A-Z]{2}$'
+    ),
+    CONSTRAINT valid_address_type CHECK (address_type IN ('current', 'previous', 'correspondence'))
+);
+
+-- Employment information
+CREATE TABLE employment_information (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    submission_id UUID REFERENCES client_submissions(id) ON DELETE CASCADE,
+    
+    employment_status employment_status NOT NULL,
+    
+    -- Employment details
+    employer_name VARCHAR(255),
+    job_title VARCHAR(100),
+    industry VARCHAR(100),
+    occupation VARCHAR(100),
+    
+    -- Employment dates
+    employment_start_date DATE,
+    employment_end_date DATE,
+    
+    -- Income
+    annual_income DECIMAL(15, 2),
+    other_income DECIMAL(15, 2),
+    income_source VARCHAR(255),
+    
+    is_current BOOLEAN DEFAULT TRUE,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_income CHECK (annual_income >= 0),
+    CONSTRAINT valid_employment_dates CHECK (employment_end_date IS NULL OR employment_end_date >= employment_start_date)
+);
+
+-- Financial information
+CREATE TABLE financial_information (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    submission_id UUID REFERENCES client_submissions(id) ON DELETE CASCADE,
+    
+    -- Assets
+    total_assets DECIMAL(15, 2),
+    property_value DECIMAL(15, 2),
+    savings_investments DECIMAL(15, 2),
+    pension_value DECIMAL(15, 2),
+    other_assets DECIMAL(15, 2),
+    other_assets_description TEXT,
+    
+    -- Liabilities
+    total_liabilities DECIMAL(15, 2),
+    mortgage_outstanding DECIMAL(15, 2),
+    loans_outstanding DECIMAL(15, 2),
+    credit_card_debt DECIMAL(15, 2),
+    other_liabilities DECIMAL(15, 2),
+    other_liabilities_description TEXT,
+    
+    -- Net worth (calculated)
+    net_worth DECIMAL(15, 2) GENERATED ALWAYS AS (
+        COALESCE(total_assets, 0) - COALESCE(total_liabilities, 0)
+    ) STORED,
+    
+    -- Monthly finances
+    monthly_income DECIMAL(15, 2),
+    monthly_expenses DECIMAL(15, 2),
+    monthly_disposable_income DECIMAL(15, 2) GENERATED ALWAYS AS (
+        COALESCE(monthly_income, 0) - COALESCE(monthly_expenses, 0)
+    ) STORED,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_amounts CHECK (
+        total_assets >= 0 AND 
+        total_liabilities >= 0 AND 
+        monthly_income >= 0 AND 
+        monthly_expenses >= 0
+    )
+);
+
+-- Fact find / Investment objectives
+CREATE TABLE fact_find (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    submission_id UUID REFERENCES client_submissions(id) ON DELETE CASCADE,
+    
+    -- Investment objectives
+    investment_objectives TEXT[],
+    investment_time_horizon INTEGER, -- in years
+    risk_tolerance risk_tolerance,
+    
+    -- Investment experience
+    investment_experience_years INTEGER,
+    investment_knowledge_level VARCHAR(20), -- 'basic', 'intermediate', 'advanced', 'professional'
+    previous_investments TEXT[],
+    
+    -- Financial goals
+    financial_goals TEXT[],
+    retirement_age INTEGER,
+    retirement_income_target DECIMAL(15, 2),
+    
+    -- Dependents
+    number_of_dependents INTEGER DEFAULT 0,
+    dependents_ages INTEGER[],
+    
+    -- Other considerations
+    ethical_investment_preferences TEXT,
+    tax_considerations TEXT,
+    estate_planning_needs TEXT,
+    
+    -- Additional notes
+    additional_information TEXT,
+    special_requirements TEXT,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_time_horizon CHECK (investment_time_horizon >= 0 AND investment_time_horizon <= 100),
+    CONSTRAINT valid_retirement_age CHECK (retirement_age >= 50 AND retirement_age <= 100),
+    CONSTRAINT valid_knowledge_level CHECK (
+        investment_knowledge_level IN ('basic', 'intermediate', 'advanced', 'professional')
+    )
+);
+
+-- Consent and declarations
+CREATE TABLE consents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    submission_id UUID REFERENCES client_submissions(id) ON DELETE CASCADE,
+    
+    -- Data protection
+    data_processing_consent BOOLEAN NOT NULL DEFAULT FALSE,
+    marketing_consent BOOLEAN DEFAULT FALSE,
+    third_party_sharing_consent BOOLEAN DEFAULT FALSE,
+    
+    -- Terms and conditions
+    terms_accepted BOOLEAN NOT NULL DEFAULT FALSE,
+    terms_accepted_at TIMESTAMP WITH TIME ZONE,
+    terms_version VARCHAR(20),
+    
+    -- Declarations
+    information_accuracy_declaration BOOLEAN NOT NULL DEFAULT FALSE,
+    fca_declaration BOOLEAN NOT NULL DEFAULT FALSE,
+    
+    -- Electronic signature
+    electronic_signature VARCHAR(255),
+    signature_date TIMESTAMP WITH TIME ZONE,
+    ip_address_at_signature INET,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT all_required_consents CHECK (
+        data_processing_consent = TRUE AND 
+        terms_accepted = TRUE AND 
+        information_accuracy_declaration = TRUE AND 
+        fca_declaration = TRUE
+    )
+);
+
+-- Audit log
+CREATE TABLE audit_log (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    submission_id UUID REFERENCES client_submissions(id) ON DELETE CASCADE,
+    action VARCHAR(50) NOT NULL,
+    table_name VARCHAR(100),
+    record_id UUID,
+    old_values JSONB,
+    new_values JSONB,
+    changed_by VARCHAR(255),
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_action CHECK (
+        action IN ('create', 'update', 'delete', 'submit', 'archive', 'restore')
+    )
+);
+
+-- Indexes for performance
+CREATE INDEX idx_submissions_session ON client_submissions(session_id);
+CREATE INDEX idx_submissions_status ON client_submissions(status);
+CREATE INDEX idx_submissions_created ON client_submissions(created_at);
+CREATE INDEX idx_personal_details_submission ON personal_details(submission_id);
+CREATE INDEX idx_contact_email ON contact_information(email);
+CREATE INDEX idx_addresses_submission ON addresses(submission_id);
+CREATE INDEX idx_addresses_postcode ON addresses(postcode);
+CREATE INDEX idx_audit_log_submission ON audit_log(submission_id);
+CREATE INDEX idx_audit_log_created ON audit_log(created_at);
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Triggers for updated_at
+CREATE TRIGGER update_client_submissions_updated_at BEFORE UPDATE ON client_submissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_personal_details_updated_at BEFORE UPDATE ON personal_details FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_contact_information_updated_at BEFORE UPDATE ON contact_information FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_addresses_updated_at BEFORE UPDATE ON addresses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_employment_information_updated_at BEFORE UPDATE ON employment_information FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_financial_information_updated_at BEFORE UPDATE ON financial_information FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_fact_find_updated_at BEFORE UPDATE ON fact_find FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_consents_updated_at BEFORE UPDATE ON consents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
+
+---
 
 ## Backend Implementation
 
@@ -170,844 +416,481 @@ backend/
 ├── src/
 │   ├── config/
 │   │   ├── database.ts
-│   │   └── security.ts
-│   ├── controllers/
-│   │   ├── clientController.ts
-│   │   └── documentController.ts
+│   │   ├── redis.ts
+│   │   └── environment.ts
 │   ├── middleware/
-│   │   ├── errorHandler.ts
+│   │   ├── auth.ts
 │   │   ├── validation.ts
+│   │   ├── errorHandler.ts
 │   │   ├── rateLimiter.ts
-│   │   └── csrf.ts
+│   │   └── security.ts
+│   ├── models/
+│   │   ├── ClientSubmission.ts
+│   │   ├── PersonalDetails.ts
+│   │   ├── ContactInformation.ts
+│   │   ├── Address.ts
+│   │   ├── Employment.ts
+│   │   ├── Financial.ts
+│   │   ├── FactFind.ts
+│   │   └── Consent.ts
 │   ├── routes/
-│   │   ├── clientRoutes.ts
-│   │   └── documentRoutes.ts
+│   │   ├── index.ts
+│   │   ├── submission.routes.ts
+│   │   ├── autosave.routes.ts
+│   │   └── validation.routes.ts
 │   ├── services/
-│   │   ├── clientService.ts
-│   │   ├── documentService.ts
+│   │   ├── submissionService.ts
+│   │   ├── validationService.ts
+│   │   ├── autosaveService.ts
+│   │   ├── emailService.ts
 │   │   └── auditService.ts
 │   ├── validators/
-│   │   └── clientValidators.ts
+│   │   ├── personalDetails.validator.ts
+│   │   ├── contactInfo.validator.ts
+│   │   ├── address.validator.ts
+│   │   ├── employment.validator.ts
+│   │   ├── financial.validator.ts
+│   │   ├── factFind.validator.ts
+│   │   └── consent.validator.ts
+│   ├── utils/
+│   │   ├── logger.ts
+│   │   ├── postcodeValidator.ts
+│   │   ├── niNumberValidator.ts
+│   │   └── encryption.ts
 │   ├── types/
 │   │   └── index.ts
-│   └── app.ts
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-├── .env.example
+│   └── server.ts
+├── tests/
 ├── package.json
-└── tsconfig.json
+├── tsconfig.json
+└── .env.example
 ```
 
 ### Core Backend Files
 
-#### `src/app.ts`
+#### `src/config/environment.ts`
 
 ```typescript
-import express, { Express } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import cookieParser from 'cookie-parser';
-import clientRoutes from './routes/clientRoutes';
-import documentRoutes from './routes/documentRoutes';
-import { errorHandler } from './middleware/errorHandler';
-import { rateLimiter } from './middleware/rateLimiter';
+import dotenv from 'dotenv';
 
-const app: Express = express();
+dotenv.config();
 
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
-
-// CORS configuration
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
-}));
-
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
-app.use(compression());
-
-// Rate limiting
-app.use('/api/', rateLimiter);
-
-// Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// API routes
-app.use('/api/clients', clientRoutes);
-app.use('/api/documents', documentRoutes);
-
-// Error handling
-app.use(errorHandler);
-
-export default app;
-```
-
-#### `src/validators/clientValidators.ts`
-
-```typescript
-import { z } from 'zod';
-
-// UK postcode validation
-const postcodeRegex = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}$/i;
-
-// UK phone number validation
-const phoneRegex = /^(\+44\s?|0)(\d{10}|\d{4}\s?\d{6}|\d{3}\s?\d{3}\s?\d{4})$/;
-
-// National Insurance Number validation
-const ninoRegex = /^[A-Z]{2}\d{6}[A-Z]$/;
-
-export const personalDetailsSchema = z.object({
-  title: z.enum(['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Prof', 'Other']).optional(),
-  firstName: z.string().min(1, 'First name is required').max(50),
-  middleName: z.string().max(50).optional(),
-  lastName: z.string().min(1, 'Last name is required').max(50),
-  dateOfBirth: z.string().refine((date) => {
-    const dob = new Date(date);
-    const age = (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-    return age >= 18 && age <= 120;
-  }, 'Must be between 18 and 120 years old'),
-  nationalInsuranceNumber: z.string().regex(ninoRegex, 'Invalid NI number format').optional(),
-  nationality: z.string().min(1, 'Nationality is required'),
-});
-
-export const contactDetailsSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  phoneNumber: z.string().regex(phoneRegex, 'Invalid UK phone number'),
-  mobileNumber: z.string().regex(phoneRegex, 'Invalid UK mobile number').optional(),
-});
-
-export const addressSchema = z.object({
-  addressLine1: z.string().min(1, 'Address line 1 is required').max(100),
-  addressLine2: z.string().max(100).optional(),
-  city: z.string().min(1, 'City is required').max(50),
-  county: z.string().max(50).optional(),
-  postcode: z.string().regex(postcodeRegex, 'Invalid UK postcode'),
-  country: z.string().default('United Kingdom'),
-  yearsAtAddress: z.number().min(0).max(100).optional(),
-});
-
-export const previousAddressSchema = z.object({
-  prevAddressLine1: z.string().max(100).optional(),
-  prevAddressLine2: z.string().max(100).optional(),
-  prevCity: z.string().max(50).optional(),
-  prevCounty: z.string().max(50).optional(),
-  prevPostcode: z.string().regex(postcodeRegex, 'Invalid UK postcode').optional(),
-  prevCountry: z.string().optional(),
-}).optional();
-
-export const employmentSchema = z.object({
-  employmentStatus: z.enum([
-    'employed',
-    'self_employed',
-    'unemployed',
-    'retired',
-    'student',
-    'homemaker'
-  ]),
-  occupation: z.string().max(100).optional(),
-  employerName: z.string().max(100).optional(),
-  employerAddress: z.string().max(200).optional(),
-  annualIncome: z.number().min(0).optional(),
-});
-
-export const financialSituationSchema = z.object({
-  totalAssets: z.number().min(0).optional(),
-  totalLiabilities: z.number().min(0).optional(),
-  monthlyExpenditure: z.number().min(0).optional(),
-  existingInvestments: z.array(z.object({
-    type: z.string(),
-    provider: z.string(),
-    value: z.number(),
-    description: z.string().optional(),
-  })).optional(),
-});
-
-export const investmentObjectivesSchema = z.object({
-  investmentObjectives: z.array(z.enum(['growth', 'income', 'capital_preservation', 'tax_efficiency'])),
-  investmentTimeHorizon: z.enum(['short_term', 'medium_term', 'long_term']).optional(),
-  riskTolerance: z.enum(['low', 'medium', 'high']).optional(),
-  investmentKnowledge: z.enum(['none', 'basic', 'good', 'extensive']).optional(),
-});
-
-export const taxStatusSchema = z.object({
-  taxResidency: z.string().min(1, 'Tax residency is required'),
-  taxIdentificationNumber: z.string().optional(),
-  isPEP: z.boolean().default(false),
-  pepDetails: z.string().max(500).optional(),
-});
-
-export const consentSchema = z.object({
-  marketingConsent: z.boolean().default(false),
-  termsAccepted: z.boolean().refine(val => val === true, 'You must accept the terms and conditions'),
-  dataProcessingConsent: z.boolean().refine(val => val === true, 'You must consent to data processing'),
-});
-
-export const createClientSchema = z.object({
-  step: z.number().min(1).max(7),
-  data: z.object({
-    ...personalDetailsSchema.shape,
-    ...contactDetailsSchema.shape,
-    ...addressSchema.shape,
-    ...previousAddressSchema.shape,
-    ...employmentSchema.shape,
-    ...financialSituationSchema.shape,
-    ...investmentObjectivesSchema.shape,
-    ...taxStatusSchema.shape,
-    ...consentSchema.shape,
-  }).partial(),
-});
-
-export const updateClientSchema = createClientSchema;
-```
-
-#### `src/services/clientService.ts`
-
-```typescript
-import { PrismaClient, Client, Prisma } from '@prisma/client';
-import { auditService } from './auditService';
-
-const prisma = new PrismaClient();
-
-export class ClientService {
-  async createClient(data: Partial<Client>, metadata: { ipAddress?: string; userAgent?: string }) {
-    try {
-      const client = await prisma.client.create({
-        data: {
-          ...data,
-          currentStep: 1,
-          formStatus: 'draft',
-          ipAddress: metadata.ipAddress,
-          userAgent: metadata.userAgent,
-        } as Prisma.ClientCreateInput,
-      });
-
-      await auditService.log({
-        clientId: client.id,
-        action: 'created',
-        step: 1,
-        ipAddress: metadata.ipAddress,
-        userAgent: metadata.userAgent,
-      });
-
-      return client;
-    } catch (error) {
-      throw new Error('Failed to create client record');
-    }
-  }
-
-  async updateClient(
-    id: string,
-    data: Partial<Client>,
-    step: number,
-    metadata: { ipAddress?: string; userAgent?: string }
-  ) {
-    try {
-      const existingClient = await prisma.client.findUnique({ where: { id } });
-      
-      if (!existingClient) {
-        throw new Error('Client not found');
-      }
-
-      const client = await prisma.client.update({
-        where: { id },
-        data: {
-          ...data,
-          currentStep: Math.max(step, existingClient.currentStep),
-          updatedAt: new Date(),
-        } as Prisma.ClientUpdateInput,
-      });
-
-      await auditService.log({
-        clientId: client.id,
-        action: 'updated',
-        step,
-        ipAddress: metadata.ipAddress,
-        userAgent: metadata.userAgent,
-      });
-
-      return client;
-    } catch (error) {
-      throw new Error('Failed to update client record');
-    }
-  }
-
-  async getClient(id: string) {
-    try {
-      const client = await prisma.client.findUnique({
-        where: { id },
-        include: {
-          documents: true,
-        },
-      });
-
-      if (!client) {
-        throw new Error('Client not found');
-      }
-
-      return client;
-    } catch (error) {
-      throw new Error('Failed to retrieve client record');
-    }
-  }
-
-  async submitClient(id: string, metadata: { ipAddress?: string; userAgent?: string }) {
-    try {
-      const client = await prisma.client.update({
-        where: { id },
-        data: {
-          formStatus: 'submitted',
-          submittedAt: new Date(),
-        },
-      });
-
-      await auditService.log({
-        clientId: client.id,
-        action: 'submitted',
-        ipAddress: metadata.ipAddress,
-        userAgent: metadata.userAgent,
-      });
-
-      return client;
-    } catch (error) {
-      throw new Error('Failed to submit client record');
-    }
-  }
-
-  async getClientByEmail(email: string) {
-    return prisma.client.findUnique({
-      where: { email },
-    });
-  }
-
-  async deleteClient(id: string) {
-    try {
-      await prisma.client.delete({
-        where: { id },
-      });
-    } catch (error) {
-      throw new Error('Failed to delete client record');
-    }
-  }
-}
-
-export const clientService = new ClientService();
-```
-
-#### `src/services/auditService.ts`
-
-```typescript
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-interface AuditLogData {
-  clientId: string;
-  action: string;
-  step?: number;
-  fieldName?: string;
-  oldValue?: string;
-  newValue?: string;
-  ipAddress?: string;
-  userAgent?: string;
-}
-
-export class AuditService {
-  async log(data: AuditLogData) {
-    try {
-      await prisma.auditLog.create({
-        data: {
-          ...data,
-          createdAt: new Date(),
-        },
-      });
-    } catch (error) {
-      console.error('Failed to create audit log:', error);
-      // Don't throw error - audit logging should not break main functionality
-    }
-  }
-
-  async getClientLogs(clientId: string) {
-    return prisma.auditLog.findMany({
-      where: { clientId },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-}
-
-export const auditService = new AuditService();
-```
-
-#### `src/controllers/clientController.ts`
-
-```typescript
-import { Request, Response, NextFunction } from 'express';
-import { clientService } from '../services/clientService';
-import { createClientSchema, updateClientSchema } from '../validators/clientValidators';
-import { z } from 'zod';
-
-export class ClientController {
-  async createClient(req: Request, res: Response, next: NextFunction) {
-    try {
-      const validatedData = createClientSchema.parse(req.body);
-      
-      // Check if email already exists
-      if (validatedData.data.email) {
-        const existing = await clientService.getClientByEmail(validatedData.data.email);
-        if (existing) {
-          return res.status(400).json({
-            success: false,
-            message: 'A client with this email already exists',
-          });
-        }
-      }
-
-      const metadata = {
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-      };
-
-      const client = await clientService.createClient(validatedData.data, metadata);
-
-      res.status(201).json({
-        success: true,
-        data: {
-          id: client.id,
-          currentStep: client.currentStep,
-          formStatus: client.formStatus,
-        },
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation error',
-          errors: error.errors,
-        });
-      }
-      next(error);
-    }
-  }
-
-  async updateClient(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const validatedData = updateClientSchema.parse(req.body);
-
-      const metadata = {
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-      };
-
-      const client = await clientService.updateClient(
-        id,
-        validatedData.data,
-        validatedData.step,
-        metadata
-      );
-
-      res.status(200).json({
-        success: true,
-        data: {
-          id: client.id,
-          currentStep: client.currentStep,
-          formStatus: client.formStatus,
-        },
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation error',
-          errors: error.errors,
-        });
-      }
-      next(error);
-    }
-  }
-
-  async getClient(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const client = await clientService.getClient(id);
-
-      res.status(200).json({
-        success: true,
-        data: client,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async submitClient(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-
-      const metadata = {
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-      };
-
-      const client = await clientService.submitClient(id, metadata);
-
-      res.status(200).json({
-        success: true,
-        message: 'Form submitted successfully',
-        data: {
-          id: client.id,
-          formStatus: client.formStatus,
-          submittedAt: client.submittedAt,
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async autoSave(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { step, data } = req.body;
-
-      const metadata = {
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-      };
-
-      await clientService.updateClient(id, data, step, metadata);
-
-      res.status(200).json({
-        success: true,
-        message: 'Progress saved',
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-}
-
-export const clientController = new ClientController();
-```
-
-#### `src/routes/clientRoutes.ts`
-
-```typescript
-import { Router } from 'express';
-import { clientController } from '../controllers/clientController';
-import { csrfProtection } from '../middleware/csrf';
-
-const router = Router();
-
-// Apply CSRF protection to all routes
-router.use(csrfProtection);
-
-router.post('/', clientController.createClient.bind(clientController));
-router.get('/:id', clientController.getClient.bind(clientController));
-router.put('/:id', clientController.updateClient.bind(clientController));
-router.post('/:id/submit', clientController.submitClient.bind(clientController));
-router.post('/:id/autosave', clientController.autoSave.bind(clientController));
-
-export default router;
-```
-
-#### `src/middleware/rateLimiter.ts`
-
-```typescript
-import rateLimit from 'express-rate-limit';
-
-export const rateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-export const strictRateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 submissions per hour
-  message: 'Too many form submissions, please try again later.',
-});
-```
-
-#### `src/middleware/csrf.ts`
-
-```typescript
-import csrf from 'csurf';
-import { Request, Response, NextFunction } from 'express';
-
-export const csrfProtection = csrf({
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-  },
-});
-
-export const csrfErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-  if (err.code !== 'EBADCSRFTOKEN') return next(err);
+export const config = {
+  node_env: process.env.NODE_ENV || 'development',
+  port: parseInt(process.env.PORT || '5000', 10),
   
-  res.status(403).json({
-    success: false,
-    message: 'Invalid CSRF token',
-  });
+  // Database
+  database: {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    name: process.env.DB_NAME || 'wealth_client_forms',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    ssl: process.env.DB_SSL === 'true',
+    max_connections: parseInt(process.env.DB_MAX_CONNECTIONS || '20', 10),
+  },
+  
+  // Redis
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    password: process.env.REDIS_PASSWORD,
+    ttl: parseInt(process.env.REDIS_TTL || '3600', 10), // 1 hour default
+  },
+  
+  // Security
+  security: {
+    cors_origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    encryption_key: process.env.ENCRYPTION_KEY || '',
+    session_secret: process.env.SESSION_SECRET || '',
+    rate_limit_window: parseInt(process.env.RATE_LIMIT_WINDOW || '900000', 10), // 15 minutes
+    rate_limit_max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+  },
+  
+  // Email
+  email: {
+    smtp_host: process.env.SMTP_HOST,
+    smtp_port: parseInt(process.env.SMTP_PORT || '587', 10),
+    smtp_user: process.env.SMTP_USER,
+    smtp_password: process.env.SMTP_PASSWORD,
+    from_address: process.env.EMAIL_FROM || 'noreply@wealthfirm.co.uk',
+  },
+  
+  // Application
+  app: {
+    autosave_interval: parseInt(process.env.AUTOSAVE_INTERVAL || '30000', 10), // 30 seconds
+    session_timeout: parseInt(process.env.SESSION_TIMEOUT || '3600000', 10), // 1 hour
+    max_file_size: parseInt(process.env.MAX_FILE_SIZE || '5242880', 10), // 5MB
+  },
 };
+
+export default config;
 ```
 
-#### `src/middleware/errorHandler.ts`
+#### `src/config/database.ts`
 
 ```typescript
-import { Request, Response, NextFunction } from 'express';
+import { Pool, PoolClient } from 'pg';
+import { config } from './environment';
+import logger from '../utils/logger';
 
-export const errorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  console.error('Error:', err);
+const pool = new Pool({
+  host: config.database.host,
+  port: config.database.port,
+  database: config.database.name,
+  user: config.database.user,
+  password: config.database.password,
+  max: config.database.max_connections,
+  ssl: config.database.ssl ? { rejectUnauthorized: false } : false,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
-  const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
+pool.on('error', (err) => {
+  logger.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
 
-  res.status(statusCode).json({
-    success: false,
-    message: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
+pool.on('connect', () => {
+  logger.info('Database connection established');
+});
+
+export const query = async (text: string, params?: any[]) => {
+  const start = Date.now();
+  try {
+    const res = await pool.query(text, params);
+    const duration = Date.now() - start;
+    logger.debug('Executed query', { text, duration, rows: res.rowCount });
+    return res;
+  } catch (error) {
+    logger.error('Database query error', { text, error });
+    throw error;
+  }
 };
+
+export const getClient = async (): Promise<PoolClient> => {
+  const client = await pool.connect();
+  return client;
+};
+
+export const transaction = async (callback: (client: PoolClient) => Promise<any>) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await callback(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export default pool;
 ```
 
-#### `.env.example`
-
-```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/wealth_management"
-
-# Server
-PORT=5000
-NODE_ENV=development
-
-# Frontend
-FRONTEND_URL=http://localhost:3000
-
-# Security
-SESSION_SECRET=your-super-secret-session-key-change-in-production
-CSRF_SECRET=your-csrf-secret-key-change-in-production
-
-# File Upload
-MAX_FILE_SIZE=10485760
-UPLOAD_DIR=./uploads
-```
-
-## Frontend Implementation
-
-### Project Structure
-
-```
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── form/
-│   │   │   ├── FormProgress.tsx
-│   │   │   ├── FormNavigation.tsx
-│   │   │   ├── FormField.tsx
-│   │   │   └── AutoSave.tsx
-│   │   ├── steps/
-│   │   │   ├── PersonalDetails.tsx
-│   │   │   ├── ContactDetails.tsx
-│   │   │   ├── AddressDetails.tsx
-│   │   │   ├── EmploymentDetails.tsx
-│   │   │   ├── FinancialSituation.tsx
-│   │   │   ├── InvestmentObjectives.tsx
-│   │   │   └── ReviewSubmit.tsx
-│   │   ├── ui/
-│   │   │   ├── button.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── select.tsx
-│   │   │   ├── checkbox.tsx
-│   │   │   ├── radio.tsx
-│   │   │   └── card.tsx
-│   │   └── layout/
-│   │       ├── Header.tsx
-│   │       └── Footer.tsx
-│   ├── context/
-│   │   └── FormContext.tsx
-│   ├── hooks/
-│   │   ├── useFormData.ts
-│   │   ├── useAutoSave.ts
-│   │   └── useFormValidation.ts
-│   ├── services/
-│   │   └── api.ts
-│   ├── types/
-│   │   └── form.types.ts
-│   ├── utils/
-│   │   ├── validation.ts
-│   │   └── formatters.ts
-│   ├── App.tsx
-│   └── main.tsx
-├── public/
-├── package.json
-└── tsconfig.json
-```
-
-### Core Frontend Files
-
-#### `src/types/form.types.ts`
+#### `src/config/redis.ts`
 
 ```typescript
-export interface PersonalDetails {
+import Redis from 'ioredis';
+import { config } from './environment';
+import logger from '../utils/logger';
+
+const redis = new Redis({
+  host: config.redis.host,
+  port: config.redis.port,
+  password: config.redis.password,
+  retryStrategy: (times) => {
+    const delay = Math.min(times * 50, 2000);
+    return delay;
+  },
+  maxRetriesPerRequest: 3,
+});
+
+redis.on('connect', () => {
+  logger.info('Redis connection established');
+});
+
+redis.on('error', (err) => {
+  logger.error('Redis connection error', err);
+});
+
+export const setCache = async (key: string, value: any, ttl?: number): Promise<void> => {
+  const serialized = JSON.stringify(value);
+  const expiry = ttl || config.redis.ttl;
+  await redis.setex(key, expiry, serialized);
+};
+
+export const getCache = async <T>(key: string): Promise<T | null> => {
+  const data = await redis.get(key);
+  return data ? JSON.parse(data) : null;
+};
+
+export const deleteCache = async (key: string): Promise<void> => {
+  await redis.del(key);
+};
+
+export const exists = async (key: string): Promise<boolean> => {
+  const result = await redis.exists(key);
+  return result === 1;
+};
+
+export default redis;
+```
+
+#### `src/types/index.ts`
+
+```typescript
+export enum SubmissionStatus {
+  DRAFT = 'draft',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  SUBMITTED = 'submitted',
+  ARCHIVED = 'archived',
+}
+
+export enum MaritalStatus {
+  SINGLE = 'single',
+  MARRIED = 'married',
+  CIVIL_PARTNERSHIP = 'civil_partnership',
+  DIVORCED = 'divorced',
+  WIDOWED = 'widowed',
+  SEPARATED = 'separated',
+}
+
+export enum EmploymentStatus {
+  EMPLOYED = 'employed',
+  SELF_EMPLOYED = 'self_employed',
+  RETIRED = 'retired',
+  UNEMPLOYED = 'unemployed',
+  STUDENT = 'student',
+  OTHER = 'other',
+}
+
+export enum RiskTolerance {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  VERY_HIGH = 'very_high',
+}
+
+export interface PersonalDetailsData {
   title?: string;
   firstName: string;
-  middleName?: string;
+  middleNames?: string;
   lastName: string;
+  preferredName?: string;
   dateOfBirth: string;
   nationalInsuranceNumber?: string;
-  nationality: string;
+  maritalStatus?: MaritalStatus;
+  nationality?: string;
+  countryOfBirth?: string;
 }
 
-export interface ContactDetails {
+export interface ContactInformationData {
   email: string;
-  phoneNumber: string;
-  mobileNumber?: string;
+  primaryPhone: string;
+  secondaryPhone?: string;
+  mobilePhone?: string;
+  preferredContactMethod?: string;
+  preferredContactTime?: string;
 }
 
-export interface AddressDetails {
+export interface AddressData {
+  addressType: 'current' | 'previous' | 'correspondence';
   addressLine1: string;
   addressLine2?: string;
-  city: string;
+  addressLine3?: string;
+  townCity: string;
   county?: string;
   postcode: string;
-  country: string;
+  country?: string;
+  moveInDate?: string;
+  residentialStatus?: string;
   yearsAtAddress?: number;
+  isPrimary?: boolean;
 }
 
-export interface PreviousAddress {
-  prevAddressLine1?: string;
-  prevAddressLine2?: string;
-  prevCity?: string;
-  prevCounty?: string;
-  prevPostcode?: string;
-  prevCountry?: string;
-}
-
-export interface EmploymentDetails {
-  employmentStatus: string;
-  occupation?: string;
+export interface EmploymentData {
+  employmentStatus: EmploymentStatus;
   employerName?: string;
-  employerAddress?: string;
+  jobTitle?: string;
+  industry?: string;
+  occupation?: string;
+  employmentStartDate?: string;
+  employmentEndDate?: string;
   annualIncome?: number;
+  otherIncome?: number;
+  incomeSource?: string;
+  isCurrent?: boolean;
 }
 
-export interface Investment {
-  type: string;
-  provider: string;
-  value: number;
-  description?: string;
-}
-
-export interface FinancialSituation {
+export interface FinancialData {
   totalAssets?: number;
+  propertyValue?: number;
+  savingsInvestments?: number;
+  pensionValue?: number;
+  otherAssets?: number;
+  otherAssetsDescription?: string;
   totalLiabilities?: number;
-  monthlyExpenditure?: number;
-  existingInvestments?: Investment[];
+  mortgageOutstanding?: number;
+  loansOutstanding?: number;
+  creditCardDebt?: number;
+  otherLiabilities?: number;
+  otherLiabilitiesDescription?: string;
+  monthlyIncome?: number;
+  monthlyExpenses?: number;
 }
 
-export interface InvestmentObjectives {
-  investmentObjectives: string[];
-  investmentTimeHorizon?: string;
-  riskTolerance?: string;
-  investmentKnowledge?: string;
+export interface FactFindData {
+  investmentObjectives?: string[];
+  investmentTimeHorizon?: number;
+  riskTolerance?: RiskTolerance;
+  investmentExperienceYears?: number;
+  investmentKnowledgeLevel?: string;
+  previousInvestments?: string[];
+  financialGoals?: string[];
+  retirementAge?: number;
+  retirementIncomeTarget?: number;
+  numberOfDependents?: number;
+  dependentsAges?: number[];
+  ethicalInvestmentPreferences?: string;
+  taxConsiderations?: string;
+  estatePlanningNeeds?: string;
+  additionalInformation?: string;
+  specialRequirements?: string;
 }
 
-export interface TaxStatus {
-  taxResidency: string;
-  taxIdentificationNumber?: string;
-  isPEP: boolean;
-  pepDetails?: string;
-}
-
-export interface Consent {
-  marketingConsent: boolean;
-  termsAccepted: boolean;
+export interface ConsentData {
   dataProcessingConsent: boolean;
+  marketingConsent?: boolean;
+  thirdPartySharingConsent?: boolean;
+  termsAccepted: boolean;
+  termsVersion?: string;
+  informationAccuracyDeclaration: boolean;
+  fcaDeclaration: boolean;
+  electronicSignature?: string;
 }
 
-export interface FormData extends
-  PersonalDetails,
-  ContactDetails,
-  AddressDetails,
-  PreviousAddress,
-  EmploymentDetails,
-  FinancialSituation,
-  InvestmentObjectives,
-  TaxStatus,
-  Consent {
-  id?: string;
+export interface FormSubmission {
+  sessionId: string;
   currentStep: number;
-  formStatus: 'draft' | 'submitted' | 'reviewed';
+  personalDetails?: PersonalDetailsData;
+  contactInformation?: ContactInformationData;
+  addresses?: AddressData[];
+  employment?: EmploymentData[];
+  financial?: FinancialData;
+  factFind?: FactFindData;
+  consents?: ConsentData;
 }
 
-export interface FormStep {
-  id: number;
-  title: string;
-  description: string;
-  fields: string[];
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  meta?: {
+    timestamp: string;
+    requestId?: string;
+  };
 }
 ```
 
-#### `src/context/FormContext.tsx`
+#### `src/utils/logger.ts`
 
 ```typescript
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FormData } from '../types/form.types';
-import { apiService } from '../services/api';
+import winston from 'winston';
+import { config } from '../config/environment';
 
-interface FormContextType {
-  formData: Partial<FormData>;
-  currentStep: number;
-  updateFormData: (data: Partial<FormData>) => void;
-  setCurrentStep: (step: number) => void;
-  saveProgress: () => Promise<void>;
-  submitForm: () => Promise<void>;
-  loading: boolean;
-  error: string | null;
-}
+const levels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  debug: 4,
+};
 
-const FormContext = createContext<FormContextType | undefined>(undefined);
+const level = () => {
+  const env = config.node_env || 'development';
+  const isDevelopment = env === 'development';
+  return isDevelopment ? 'debug' : 'warn';
+};
 
-export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [formData, setFormData] = useState<Partial<FormData>>({
-    currentStep: 1,
-    formStatus: 'draft',
-    country: 'United Kingdom',
-    isPEP: false,
-    marketingConsent: false,
-    termsAccepted: false,
-    dataProcessingConsent: false,
-  });
-  const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const colors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
+};
+
+winston.addColors(colors);
+
+const format = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+  winston.format.colorize({ all: true }),
+  winston.format.printf(
+    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+  ),
+);
+
+const transports = [
+  new winston.transports.Console(),
+  new winston.transports.File({
+    filename: 'logs/error.log',
+    level: 'error',
+  }),
+  new winston.transports.File({ filename: 'logs/all.log' }),
+];
+
+const logger = winston.createLogger({
+  level: level(),
+  levels,
+  format,
+  transports,
+});
+
+export default logger;
+```
+
+#### `src/utils/postcodeValidator.ts`
+
+```typescript
+import axios from 'axios';
+import logger from './logger';
+
+// UK Postcode regex pattern
+const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}$/i;
+
+export const validateUKPostcode = (postcode: string): boolean => {
+  const cleanPostcode = postcode.replace(/\s/g, '').toUpperCase();
+  return UK_POSTCODE_REGEX.test(cleanPostcode);
+};
+
+export const formatUKPostcode = (postcode: string): string => {
+  const cleanPostcode = postcode.replace(/\s/g, '').toUpperCase();
+  
+  if (!validateUKPostcode(cleanPostcode)) {
+    return postcode;
+  }
+  
+  // Insert space before the last 3 characters
+  const outward = cleanPostcode.slice(0, -3);
+  const inward = cleanPostcode.slice(-3);
+  
+  return `${outward} ${inward}`;
+};
+
+export const lookupPostcode = async (postcode: string): Promise<any | null> => {
+  try {
+    const cleanPostcode = postcode.replace(/\s/g, '');
+    const response = await axios.get(
+      `https://api.postcodes.io/postcodes/${cleanPostcode}`
+    );
+    
+    if (response.data && response.
